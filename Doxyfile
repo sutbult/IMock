@@ -1,0 +1,24 @@
+# The project name is IFake
+PROJECT_NAME = IFake
+
+# Include the include and test folders in the documentation.
+INPUT = include test
+
+# Exclude test/include, since it only contains libraries.
+EXCLUDE = test/include
+
+# Search for source files recursively.
+RECURSIVE = YES
+
+# Generate HTML documentation.
+GENERATE_HTML = YES
+
+# Do not generate any Latex documentation.
+GENERATE_LATEX = NO
+
+# Always include a detailed description so all methods show up in the bottom of
+# the class page.
+ALWAYS_DETAILED_SEC = YES
+
+# A brief description can span multiple lines.
+MULTILINE_CPP_IS_BRIEF = YES
