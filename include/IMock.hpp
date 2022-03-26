@@ -83,6 +83,25 @@ std::string WrongCallCountException::getMessage(
     return out.str();
 }
 
+class UnknownCallException : public MockException {
+    public:
+        UnknownCallException();
+};
+
+UnknownCallException::UnknownCallException()
+    : MockException("A call was made to a method that has not been mocked.") {
+}
+
+class UnmockedCallException : public MockException {
+    public:
+        UnmockedCallException();
+};
+
+UnmockedCallException::UnmockedCallException()
+    : MockException("A call was made to a method that has been mocked but the "
+        "arguments does not match the mocked arguments.") {
+}
+
 namespace internal {
 
 class MockCaseMutableCallCount {
@@ -287,7 +306,7 @@ template <typename TReturn, typename ...TArguments>
 class UnmockedCase : public ICase<TReturn, TArguments...> {
     public:
         virtual TReturn call(TArguments... arguments) override {
-            throw MockException("The call has not been mocked.");
+            throw UnmockedCallException();
         }
 };
 
@@ -313,7 +332,8 @@ class MockedCase : public ICase<TReturn, TArguments...> {
 
         virtual TReturn call(TArguments... arguments) override {
             std::tuple<TArguments...> tupleArguments(std::move(arguments)...);
-            if(tupleArguments == _arguments) {
+            bool match = tupleArguments == _arguments;
+            if(match) {
                 _callCount->increase();
                 return _returnValue->getReturnValue();
             }
@@ -324,7 +344,7 @@ class MockedCase : public ICase<TReturn, TArguments...> {
 };
 
 void unknown(void*) {
-    throw MockException("An unmocked call was made.");
+    throw UnknownCallException();
 }
 
 }
@@ -467,7 +487,7 @@ class Mock {
         internal::VirtualTableSize _virtualTableSize;
         std::unique_ptr<void*, std::function<void(void**)>> _virtualTable;
 
-        std::unique_ptr<MockFake> _mockFake;
+        MockFake _mockFake;
 
     public:
         Mock() 
@@ -477,9 +497,7 @@ class Mock {
                 [](void** virtualTable) {
                     delete[] virtualTable;
                 })
-            , _mockFake(internal::make_unique<MockFake>(
-                _virtualTable.get(),
-                this)) {
+            , _mockFake(_virtualTable.get(), this) {
             std::fill(
                 _virtualTable.get(),
                 _virtualTable.get() + _virtualTableSize,
@@ -490,7 +508,7 @@ class Mock {
         }
 
         TInterface& get() {
-            return *reinterpret_cast<TInterface*>(_mockFake.get());
+            return *reinterpret_cast<TInterface*>(&_mockFake);
         }
 
         template <ID id, typename TReturn, typename ...TArguments>
@@ -501,10 +519,13 @@ class Mock {
             internal::VirtualOffset virtualOffset =
                 internal::getVirtualOffset(method);
 
-            if(_virtualOffsets.count(id) == 0) {
+            bool virtualOffsetsNoID = _virtualOffsets.count(id) == 0;
+            if(virtualOffsetsNoID) {
                 _virtualOffsets[id] = virtualOffset;
             }
-            if(_cases.count(virtualOffset) == 0) {
+
+            bool methodHasNoMocks = _cases.count(virtualOffset) == 0;
+            if(methodHasNoMocks) {
                 _cases[virtualOffset] = internal::make_unique<
                     internal::UnmockedCase<TReturn, TArguments...>>();
                 _virtualTable.get()[virtualOffset] =
