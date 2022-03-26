@@ -1,0 +1,14 @@
+# IDE folder.
+.vscode
+
+# The build folder.
+build
+
+# Where Doxygen puts generated documentation.
+html
+
+# Where HTML test coverage is outputted.
+coverage
+
+# Outputted test coverage.
+lcov.info
