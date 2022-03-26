@@ -113,13 +113,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 }
 
                 SECTION("the call count is one") {
-                    // Perform the call and verify it does not throw an
+                    // Call verifyCalledOnce and verify it does not throw an
                     // exception.
                     REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the first mock is zero") {
-                    // Perform the call and verify it does not throw an
+                    // Call verifyNeverCalled and verify it does not throw an
                     // exception.
                     REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
                 }
@@ -135,13 +135,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 }
 
                 SECTION("the call count is one") {
-                    // Perform the call and verify it does not throw an
+                    // Call verifyCalledOnce and verify it does not throw an
                     // exception.
                     REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the second mock is zero") {
-                    // Perform the call and verify it does not throw an
+                    // Call verifyNeverCalled and verify it does not throw an
                     // exception.
                     REQUIRE_NOTHROW(mockCaseCallCountSecond
                         .verifyNeverCalled());
@@ -166,13 +166,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 }
 
                 SECTION("the call count is one") {
-                    // Perform the call and verify it does not throw an
+                    // Call verifyCalledOnce and verify it does not throw an
                     // exception.
                     REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the first mock is zero") {
-                    // Perform the call and verify it does not throw an
+                    // Call verifyNeverCalled and verify it does not throw an
                     // exception.
                     REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
                 }
@@ -188,13 +188,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 }
 
                 SECTION("the call count is one") {
-                    // Perform the call and verify it does not throw an
+                    // Call verifyCalledOnce and verify it does not throw an
                     // exception.
                     REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the second mock is zero") {
-                    // Perform the call and verify it does not throw an
+                    // Call verifyNeverCalled and verify it does not throw an
                     // exception.
                     REQUIRE_NOTHROW(mockCaseCallCountSecond
                         .verifyNeverCalled());
@@ -228,7 +228,8 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             }
 
             SECTION("the call count is one") {
-                // Perform the call and verify it does not throw an exception.
+                // Call verifyCalledOnce and verify it does not throw an
+                // exception.
                 REQUIRE_NOTHROW(mockCaseCallCounts[i].verifyCalledOnce());
             }
         }
