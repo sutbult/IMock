@@ -235,3 +235,103 @@ TEST_CASE("can mock a basic interface", "[basic]") {
         }
     }
 }
+
+TEST_CASE("can mock an interface where every argument and return value is a "
+    "constant reference", "[reference]") {
+    // Declare an interface.
+    class ICalculator {
+        public:
+            virtual const int& add(const int&, const int&) = 0;
+            virtual const int& subtract(const int&, const int&) = 0;
+            virtual const int& multiply(const int&, const int&) = 0;
+            virtual const int& divide(const int&, const int&) = 0;
+    };
+
+    // Create a Mock of ICalculator.
+    IMock::Mock<ICalculator> mock;
+
+    SECTION("mock add") {
+        // Declare variables for one and two. It is necessary to keep the memory
+        // containing used test values alive for the duration of the test since
+        // IMock only stores references to values if arguments and/or return
+        // values is declared as references.
+        int one = 1;
+        int two = 2;
+
+        // Mock add.
+        IMock::MockCaseCallCount mockCaseCallCount = when(mock, add)
+            .with(one, one)
+            .returns(two);
+
+        SECTION("call add with the mocked values") {
+            // Call add with the mocked values.
+            const int& result = mock.get().add(one, one);
+
+            SECTION("the result is correct") {
+                // Verify the result equals two.
+                REQUIRE(result == two);
+            }
+
+            SECTION("the call count is one") {
+                // Call verifyCalledOnce and verify it does not throw an
+                // exception.
+                REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+            }
+        }
+
+        SECTION("mock add again") {
+            // Declare a variable for five.
+            int five = 5;
+
+            // Mock add with other values.
+            IMock::MockCaseCallCount mockCaseCallCountSecond = when(mock, add)
+                .with(two, two)
+                .returns(five);
+
+            SECTION("call add with the second mock") {
+                // Call add with the values of the second mock.
+                const int& result = mock.get().add(two, two);
+
+                SECTION("the result is correct") {
+                    // Verify the result is five.
+                    REQUIRE(result == five);
+                }
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the first mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                }
+            }
+
+            SECTION("call add with the first mock") {
+                // Call add with the values of the first mock.
+                const int& result = mock.get().add(one, one);
+
+                SECTION("the result is correct") {
+                    // Verify the result is two.
+                    REQUIRE(result == two);
+                }
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the second mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                        .verifyNeverCalled());
+                }
+            }
+        }
+    }
+}
