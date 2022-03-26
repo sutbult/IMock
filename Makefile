@@ -33,3 +33,11 @@ test: build
 		lcov.info \
 		--output-directory coverage \
 		--branch-coverage
+
+# Builds the program inside a Docker container.
+docker-build:
+	docker build -t imock .
+
+# Builds the program and runs the automatic tests inside a Docker container.
+docker-test: docker-build
+	docker run -t imock make test
