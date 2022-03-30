@@ -366,8 +366,8 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
             REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
         }
 
-        SECTION("call add with the mocked values") {
-            // Call getInt with the mocked values.
+        SECTION("call getInt") {
+            // Call getInt.
             int result = mock.get().getInt();
 
             SECTION("the result is correct") {
@@ -382,15 +382,15 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
             }
         }
 
-        SECTION("mock add again") {
-            // Mock add with other values.
+        SECTION("mock getInt again") {
+            // Mock getInt with other values.
             IMock::MockCaseCallCount mockCaseCallCountSecond =
                 when(mock, getInt)
                     .with()
                     .returns(2);
 
-            SECTION("call add with the second mock") {
-                // Call add with the values of the second mock.
+            SECTION("call getInt") {
+                // Call getInt.
                 int result = mock.get().getInt();
 
                 SECTION("the result is correct") {
@@ -408,6 +408,103 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
                     REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                }
+            }
+        }
+    }
+}
+
+TEST_CASE("can mock an interface without any return value",
+    "[no_return_value]") {
+    // Declare a basic interface.
+    class INoReturnValue {
+        public:
+            virtual void setInt(int) = 0;
+    };
+
+    // Create a Mock of INoReturnValue.
+    IMock::Mock<INoReturnValue> mock;
+
+    SECTION("call setInt when it has not been mocked") {
+        // Perform the call and verify it throws an UnknownCallException.
+        REQUIRE_THROWS_MATCHES(
+            mock.get().setInt(1),
+            IMock::UnknownCallException,
+            Catch::Message("A call was made to a method that has not been "
+                "mocked."));
+    }
+
+    SECTION("mock setInt") {
+        // Mock setInt.
+        IMock::MockCaseCallCount mockCaseCallCount = when(mock, setInt)
+            .with(1)
+            .returns();
+
+        SECTION("no calls have initially been made") {
+            // Call verifyNeverCalled and verify it does not throw an exception.
+            REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+        }
+
+        SECTION("call setInt with the mocked values") {
+            // Call setInt with the mocked value.
+            mock.get().setInt(1);
+
+            SECTION("the call count is one") {
+                // Call verifyCalledOnce and verify it does not throw an
+                // exception.
+                REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+            }
+        }
+
+        SECTION("call setInt with an unmocked value") {
+            // Perform the call and verify it throws an UnmockedCallException.
+            REQUIRE_THROWS_MATCHES(
+                mock.get().setInt(2),
+                IMock::UnmockedCallException,
+                Catch::Message("A call was made to a method that has been "
+                    "mocked but the arguments does not match the mocked "
+                    "arguments."));
+        }
+
+        SECTION("mock setInt again") {
+            // Mock setInt with another value.
+            IMock::MockCaseCallCount mockCaseCallCountSecond =
+                when(mock, setInt)
+                    .with(2)
+                    .returns();
+
+            SECTION("call add with the second mock") {
+                // Call add with the value of the second mock.
+                mock.get().setInt(2);
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the first mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                }
+            }
+
+            SECTION("call add with the first mock") {
+                // Call setInt with the value of the first mock.
+                mock.get().setInt(1);
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the second mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                        .verifyNeverCalled());
                 }
             }
         }
