@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.12)
 project(IMock)
 
 add_definitions("-std=c++11")
+add_definitions("-g")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/test/include)

@@ -510,3 +510,134 @@ TEST_CASE("can mock an interface without any return value",
         }
     }
 }
+
+TEST_CASE("can mock an interface with an argument that can't be copied",
+    "[no_copy_argument]") {
+    // Declare a class that can't be copied.
+    class NoCopy {
+        private:
+            /// An integer held by a unique_ptr, which can't be copied.
+            std::unique_ptr<int> _value;
+
+        public:
+            /// Creates a NoCopy with a given value.
+            ///
+            /// @param value The value to held.
+            NoCopy(int value)
+                : _value(IMock::internal::make_unique<int>(std::move(value))) {
+            }
+
+            /// Gets the value.
+            ///
+            /// @return The value.
+            const int& getValue() const {
+                // Return the value.
+                return *_value;
+            }
+
+            /// Compares the NoCopy with another NoCopy by comparing the
+            /// contained values.
+            ///
+            /// @param other The NoCopy to compare to.
+            /// @return True if the contained values equal each other and false
+            /// otherwise.
+            bool operator == (const NoCopy& other) const {
+                // Compare the values and return the result.
+                return this->getValue() == other.getValue();
+            }
+    };
+
+    // Declare a basic interface.
+    class INoCopyArgument {
+        public:
+            virtual void setInt(NoCopy) = 0;
+    };
+
+    // Create a Mock of INoCopyArgument.
+    IMock::Mock<INoCopyArgument> mock;
+
+    SECTION("call setInt when it has not been mocked") {
+        // Perform the call and verify it throws an UnknownCallException.
+        REQUIRE_THROWS_MATCHES(
+            mock.get().setInt(NoCopy(1)),
+            IMock::UnknownCallException,
+            Catch::Message("A call was made to a method that has not been "
+                "mocked."));
+    }
+
+    SECTION("mock setInt") {
+        // Mock setInt.
+        IMock::MockCaseCallCount mockCaseCallCount = when(mock, setInt)
+            .with(NoCopy(1))
+            .returns();
+
+        SECTION("no calls have initially been made") {
+            // Call verifyNeverCalled and verify it does not throw an exception.
+            REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+        }
+
+        SECTION("call setInt with the mocked values") {
+            // Call setInt with the mocked value.
+            mock.get().setInt(NoCopy(1));
+
+            SECTION("the call count is one") {
+                // Call verifyCalledOnce and verify it does not throw an
+                // exception.
+                REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+            }
+        }
+
+        SECTION("call setInt with an unmocked value") {
+            // Perform the call and verify it throws an UnmockedCallException.
+            REQUIRE_THROWS_MATCHES(
+                mock.get().setInt(NoCopy(2)),
+                IMock::UnmockedCallException,
+                Catch::Message("A call was made to a method that has been "
+                    "mocked but the arguments does not match the mocked "
+                    "arguments."));
+        }
+
+        SECTION("mock setInt again") {
+            // Mock setInt with another value.
+            IMock::MockCaseCallCount mockCaseCallCountSecond =
+                when(mock, setInt)
+                    .with(NoCopy(2))
+                    .returns();
+
+            SECTION("call add with the second mock") {
+                // Call add with the value of the second mock.
+                mock.get().setInt(NoCopy(2));
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the first mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                }
+            }
+
+            SECTION("call add with the first mock") {
+                // Call setInt with the value of the first mock.
+                mock.get().setInt(NoCopy(1));
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the second mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                        .verifyNeverCalled());
+                }
+            }
+        }
+    }
+}

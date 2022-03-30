@@ -260,6 +260,41 @@ inline std::unique_ptr<_Tp> make_unique(_Args&&... __args)
         new _Tp(std::forward<_Args>(__args)...));
 }
 
+// Trick to statically produce a list of integers. Solution taken from:
+// https://stackoverflow.com/a/7858971/6188897
+template<int ...>
+struct seq {
+};
+
+template<int N, int ...S>
+struct gens : gens<N-1, N-1, S...> {
+};
+
+template<int ...S>
+struct gens<0, S...>{
+    typedef seq<S...> type;
+};
+
+template<int ...S, typename TClass, typename TReturn, typename ...TArguments>
+TReturn applyWithSeq(
+    seq<S...>,
+    TReturn (TClass::*callback)(TArguments...),
+    TClass& self,
+    std::tuple<TArguments...> arguments) {
+    return (self.*callback)(std::move(std::get<S>(arguments))...);
+}
+
+template<typename TClass, typename TReturn, typename ...TArguments>
+TReturn apply(
+    TReturn (TClass::*callback)(TArguments...),
+    TClass& self,
+    std::tuple<TArguments...> arguments) {
+    return applyWithSeq(typename gens<sizeof...(TArguments)>::type(),
+        callback,
+        self,
+        std::move(arguments));
+}
+
 template <typename TReturn>
 class IReturnValue {
     public:
@@ -338,7 +373,10 @@ class MockedCase : public ICase<TReturn, TArguments...> {
                 return _returnValue->getReturnValue();
             }
             else {
-                return _previousCase->call(std::move(arguments)...);
+                return apply(
+                    &ICase<TReturn, TArguments...>::call,
+                    *_previousCase,
+                    std::move(tupleArguments));
             }
         }
 };
