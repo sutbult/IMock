@@ -16,8 +16,14 @@ build: init
 		&& cmake .. \
 		&& $(MAKE)
 
+# Builds lcovFilter.
+build-script: init
+	g++ \
+		test/script/lcovFilter.cpp \
+		-o build/lcovFilter
+
 # Builds the test executable and runs the automatic tests.
-test: build
+test: build-script build
 	find . -name "*.gcda" -type f -delete
 	build/IMockTest ${filter}
 	lcov \
@@ -27,7 +33,7 @@ test: build
 		--output-file lcov.info.raw \
 		--no-external \
 		--exclude "${mkfile_dir}/test/include/*"
-	python3 test/bin/filterbr.py lcov.info.raw > lcov.info
+	build/lcovFilter lcov.info.raw lcov.info
 	rm lcov.info.raw
 	genhtml \
 		lcov.info \

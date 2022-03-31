@@ -7,7 +7,6 @@ ENV DEBIAN_FRONTEND noninteractive
 # Update APT and install packages necessary to build the program.
 RUN apt update && apt install -y \
     build-essential \
-    python3-pip \
     cmake \
     lcov
 
