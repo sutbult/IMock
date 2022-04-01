@@ -1,5 +1,6 @@
 #include <vector>
 
+#define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include <catch2/catch.hpp>
 
 #include <IMock.hpp>
@@ -640,4 +641,74 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
             }
         }
     }
+}
+
+TEST_CASE("benchmark", "[.][benchmark]") {
+    // Declare a utility class.
+    class HeavyMock {
+        public:
+            /// Sets up a Mock with a method with a large number of mocks.
+            /// Then, the first mock to have been made is called.
+            ///
+            /// @param mockCount The number of mocks to set up.
+            static void heavyMock(int mockCount) {
+                // Declare a basic interface.
+                class IIdentity {
+                    public:
+                        virtual int id(int) = 0;
+                };
+
+                // Create a Mock of IIdentity.
+                IMock::Mock<IIdentity> mock;
+
+                // Mock id for 0.
+                IMock::MockCaseCallCount mockCaseCallCount = when(mock, id)
+                    .with(0)
+                    .returns(0);
+
+                // Mock id mockCount minus one times.
+                for(int i = 1; i < mockCount; i++) {
+                    // Mock id.
+                    when(mock, id)
+                        .with(i)
+                        .returns(i);
+                }
+
+                // Call id with 0.
+                mock.get().id(0);
+
+                // Verify id has been called once with 0.
+                mockCaseCallCount.verifyCalledOnce();
+            }
+    };
+
+    // Declare a macro for benchmark cases.
+    #define benchmarkMockCalls(mockCalls) \
+    BENCHMARK(#mockCalls) { \
+        HeavyMock::heavyMock(mockCalls); \
+    };
+
+    // Create benchmark cases for values that doubles for each new case.
+    benchmarkMockCalls(1)
+    benchmarkMockCalls(2)
+    benchmarkMockCalls(4)
+    benchmarkMockCalls(8)
+    benchmarkMockCalls(16)
+    benchmarkMockCalls(32)
+    benchmarkMockCalls(64)
+    benchmarkMockCalls(128)
+    benchmarkMockCalls(256)
+    benchmarkMockCalls(512)
+    benchmarkMockCalls(1024)
+    benchmarkMockCalls(2048)
+    benchmarkMockCalls(4096)
+    benchmarkMockCalls(8192)
+    benchmarkMockCalls(16384)
+    benchmarkMockCalls(32768)
+
+    // TODO: These calls causes stack overflow on my computer.
+    // Refactor the case handling so the recursion is converted to regular
+    // iteration. Then, include these cases.
+    //benchmarkMockCalls(65536)
+    //benchmarkMockCalls(131072)
 }
