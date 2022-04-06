@@ -481,18 +481,13 @@ class Mock {
                 MockCaseCallCount returns(
                     typename std::enable_if<!std::is_void<R>::value,
                     TReturn>::type returnValue) {
-                    std::unique_ptr<internal::NonVoidReturnValue<TReturn>>
+                    std::unique_ptr<internal::IReturnValue<TReturn>>
                         wrappedReturnValue = internal::make_unique<
                         internal::NonVoidReturnValue<TReturn>>(returnValue);
 
-                    std::unique_ptr<internal::IReturnValue<TReturn>>*
-                        wrappedReturnValuePointer = reinterpret_cast<
-                        std::unique_ptr<internal::IReturnValue<TReturn>>*>(
-                        &wrappedReturnValue);
-
                     return _mock->addCase<id, TReturn, TArguments...>(
                         _method,
-                        std::move(*wrappedReturnValuePointer),
+                        std::move(wrappedReturnValue),
                         std::move(_arguments));
                 }
 
@@ -500,18 +495,13 @@ class Mock {
                     typename std::enable_if<std::is_void<R>::value, R>::type* =
                     nullptr>
                 MockCaseCallCount returns() {
-                    std::unique_ptr<internal::VoidReturnValue>
+                    std::unique_ptr<internal::IReturnValue<TReturn>>
                         wrappedReturnValue = internal::make_unique<
                         internal::VoidReturnValue>();
 
-                    std::unique_ptr<internal::IReturnValue<TReturn>>*
-                        wrappedReturnValuePointer = reinterpret_cast<
-                        std::unique_ptr<internal::IReturnValue<TReturn>>*>(
-                        &wrappedReturnValue);
-
                     return _mock->addCase<id, TReturn, TArguments...>(
                         _method,
-                        std::move(*wrappedReturnValuePointer),
+                        std::move(wrappedReturnValue),
                         std::move(_arguments));
                 }
         };
