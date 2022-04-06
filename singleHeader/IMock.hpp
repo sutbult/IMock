@@ -4,53 +4,19 @@
 #include <map>
 #include <memory>
 #include <sstream>
+#include <string>
 #include <type_traits>
 
-namespace IMock::internal {
+namespace IMock::Exception {
 
-template <typename TReturn>
-class IReturnValue {
-    public:
-        virtual ~IReturnValue() {
-        }
-
-        virtual TReturn getReturnValue() = 0;
-};
-
-class VoidReturnValue : public IReturnValue<void> {
-    public:
-        virtual void getReturnValue() override {
-        }
-};
-
-template <typename TReturn>
-class NonVoidReturnValue : public IReturnValue<TReturn> {
-    private:
-        TReturn _returnValue;
-
-    public:
-        NonVoidReturnValue(TReturn returnValue)
-            : _returnValue(returnValue) {
-        }
-        
-        virtual TReturn getReturnValue() override {
-            return _returnValue;
-        }
-};
-
-}
-
-namespace IMock {
-
-/// A class implementing std::exception that can be thrown by the program when
-/// deemed necessary.
+/// A class implementing std::exception thrown by IMock when something is wrong.
 class MockException : public std::exception {
     private:
         /// An explanation of what went wrong.
         std::string message;
     
     public:
-        /// Creates an Exception.
+        /// Creates a MockException.
         ///
         /// @param message An explanation of what went wrong.
         MockException(std::string message);
@@ -70,6 +36,10 @@ const char* MockException::what() const noexcept {
     // Return a constant pointer to the message.
     return message.c_str();
 }
+
+}
+
+namespace IMock::Exception {
 
 class WrongCallCountException : public MockException {
     public:
@@ -117,6 +87,10 @@ std::string WrongCallCountException::getMessage(
     return out.str();
 }
 
+}
+
+namespace IMock::Exception {
+
 class UnknownCallException : public MockException {
     public:
         UnknownCallException();
@@ -135,6 +109,44 @@ UnmockedCallException::UnmockedCallException()
     : MockException("A call was made to a method that has been mocked but the "
         "arguments does not match the mocked arguments.") {
 }
+
+}
+
+namespace IMock::internal {
+
+template <typename TReturn>
+class IReturnValue {
+    public:
+        virtual ~IReturnValue() {
+        }
+
+        virtual TReturn getReturnValue() = 0;
+};
+
+class VoidReturnValue : public IReturnValue<void> {
+    public:
+        virtual void getReturnValue() override {
+        }
+};
+
+template <typename TReturn>
+class NonVoidReturnValue : public IReturnValue<TReturn> {
+    private:
+        TReturn _returnValue;
+
+    public:
+        NonVoidReturnValue(TReturn returnValue)
+            : _returnValue(returnValue) {
+        }
+        
+        virtual TReturn getReturnValue() override {
+            return _returnValue;
+        }
+};
+
+}
+
+namespace IMock {
 
 namespace internal {
 
@@ -176,7 +188,7 @@ class MockCaseCallCount {
             int actualCallCount = getCallCount();
 
             if(actualCallCount != expectedCallCount) {
-                throw WrongCallCountException(
+                throw Exception::WrongCallCountException(
                     expectedCallCount,
                     actualCallCount);
             }
@@ -345,7 +357,7 @@ template <typename TReturn, typename ...TArguments>
 class UnmockedCase : public ICase<TReturn, TArguments...> {
     public:
         virtual TReturn call(TArguments... arguments) override {
-            throw UnmockedCallException();
+            throw Exception::UnmockedCallException();
         }
 };
 
@@ -386,7 +398,7 @@ class MockedCase : public ICase<TReturn, TArguments...> {
 };
 
 void unknown(void*) {
-    throw UnknownCallException();
+    throw Exception::UnknownCallException();
 }
 
 }

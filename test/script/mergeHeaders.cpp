@@ -1,7 +1,9 @@
+#include <exception>
 #include <iostream>
 #include <fstream>
 #include <set>
 #include <string>
+#include <sys/stat.h>
 #include <vector>
 
 using std::cout;
@@ -139,22 +141,24 @@ void writeFile(string path, vector<string> lines) {
     file.close();
 }
 
-/// Checks if a file exists.
+/// Checks if a path points to a file.
 ///
-/// @param The path of the file to check.
-/// @return True if a file exists and false otherwise.
-bool fileExists(string path) {
-    // Create an ifstream for the file.
-    ifstream file(path);
+/// @param path The path to check.
+/// @return True if the path points to a file and false otherwise.
+bool isFile(string path) {
+    // Declare a variable for the result of stat.
+    struct stat statInfo;
 
-    // A file exists if file.good() is true.
-    bool exists = file.good();
+    // Call stat with the path.
+    int statCode = stat(path.c_str(), &statInfo);
 
-    // Close the file handle.
-    file.close();
+    // The path points to a file if statCode is zero (indicating something
+    // exists) and statInfo.st_mode has the S_IFREG (indicating the found object
+    // is a file).
+    bool isFile = statCode == 0 && statInfo.st_mode & S_IFREG;
 
-    // Return exists.
-    return exists;
+    // Return isFile.
+    return isFile;
 }
 
 /// The start of an include statement.
@@ -221,7 +225,7 @@ void processHeader(
 
         // Get if the header is an internal header by checking if a file with
         // its path exists.
-        bool isInternal = fileExists(includeFolder + header);
+        bool isInternal = isFile(includeFolder + header);
 
         // Check isInternal.
         if(!isInternal) {

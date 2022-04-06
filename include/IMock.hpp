@@ -6,103 +6,11 @@
 #include <sstream>
 #include <type_traits>
 
+#include <exception/WrongCallCountException.hpp>
+#include <exception/UnknownCallException.hpp>
 #include <IReturnValue.hpp>
 
 namespace IMock {
-
-/// A class implementing std::exception that can be thrown by the program when
-/// deemed necessary.
-class MockException : public std::exception {
-    private:
-        /// An explanation of what went wrong.
-        std::string message;
-    
-    public:
-        /// Creates an Exception.
-        ///
-        /// @param message An explanation of what went wrong.
-        MockException(std::string message);
-
-        /// An override of std::exception::what() that returns the message.
-        ///
-        /// @return A constant pointer to the message.
-        const char* what() const noexcept override;
-};
-
-MockException::MockException(
-    std::string message)
-    : message(message) {
-}
-
-const char* MockException::what() const noexcept {
-    // Return a constant pointer to the message.
-    return message.c_str();
-}
-
-class WrongCallCountException : public MockException {
-    public:
-        WrongCallCountException(
-            int expectedCallCount,
-            int actualCallCount);
-
-    private:
-        static std::string getMessage(
-            int expectedCallCount,
-            int actualCallCount);
-};
-
-WrongCallCountException::WrongCallCountException(
-    int expectedCallCount,
-    int actualCallCount)
-    : MockException(getMessage(
-        expectedCallCount,
-        actualCallCount)) {
-}
-
-std::string WrongCallCountException::getMessage(
-    int expectedCallCount,
-    int actualCallCount) {
-    std::stringstream out;
-
-    out << "Expected the method to be called "
-        << expectedCallCount
-        << " time";
-    
-    if(expectedCallCount != 1) {
-        out << "s";
-    }
-
-    out << " but it was called "
-        << actualCallCount
-        << " time";
-
-    if(actualCallCount != 1) {
-        out << "s";
-    }
-
-    out << ".";
-
-    return out.str();
-}
-
-class UnknownCallException : public MockException {
-    public:
-        UnknownCallException();
-};
-
-UnknownCallException::UnknownCallException()
-    : MockException("A call was made to a method that has not been mocked.") {
-}
-
-class UnmockedCallException : public MockException {
-    public:
-        UnmockedCallException();
-};
-
-UnmockedCallException::UnmockedCallException()
-    : MockException("A call was made to a method that has been mocked but the "
-        "arguments does not match the mocked arguments.") {
-}
 
 namespace internal {
 
@@ -144,7 +52,7 @@ class MockCaseCallCount {
             int actualCallCount = getCallCount();
 
             if(actualCallCount != expectedCallCount) {
-                throw WrongCallCountException(
+                throw Exception::WrongCallCountException(
                     expectedCallCount,
                     actualCallCount);
             }
@@ -313,7 +221,7 @@ template <typename TReturn, typename ...TArguments>
 class UnmockedCase : public ICase<TReturn, TArguments...> {
     public:
         virtual TReturn call(TArguments... arguments) override {
-            throw UnmockedCallException();
+            throw Exception::UnmockedCallException();
         }
 };
 
@@ -354,7 +262,7 @@ class MockedCase : public ICase<TReturn, TArguments...> {
 };
 
 void unknown(void*) {
-    throw UnknownCallException();
+    throw Exception::UnknownCallException();
 }
 
 }

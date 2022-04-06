@@ -22,7 +22,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
         // Perform the call and verify it throws an UnknownCallException.
         REQUIRE_THROWS_MATCHES(
             mock.get().add(1, 1),
-            IMock::UnknownCallException,
+            IMock::Exception::UnknownCallException,
             Catch::Message("A call was made to a method that has not been "
                 "mocked."));
     }
@@ -44,7 +44,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 // WrongCallCountException.
                 REQUIRE_THROWS_MATCHES(
                     mockCaseCallCount.verifyCalledOnce(),
-                    IMock::WrongCallCountException,
+                    IMock::Exception::WrongCallCountException,
                     Catch::Message("Expected the method to be called 1 time "
                         "but it was called 0 times."));
             }
@@ -72,7 +72,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                     // WrongCallCountException.
                     REQUIRE_THROWS_MATCHES(
                         mockCaseCallCount.verifyNeverCalled(),
-                        IMock::WrongCallCountException,
+                        IMock::Exception::WrongCallCountException,
                         Catch::Message("Expected the method to be called 0 "
                             "times but it was called 1 time."));
                 }
@@ -83,7 +83,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             // Perform the call and verify it throws an UnmockedCallException.
             REQUIRE_THROWS_MATCHES(
                 mock.get().add(1, 2),
-                IMock::UnmockedCallException,
+                IMock::Exception::UnmockedCallException,
                 Catch::Message("A call was made to a method that has been "
                     "mocked but the arguments does not match the mocked "
                     "arguments."));
@@ -93,7 +93,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             // Perform the call and verify it throws an UnknownCallException.
             REQUIRE_THROWS_MATCHES(
                 mock.get().subtract(1, 1),
-                IMock::UnknownCallException,
+                IMock::Exception::UnknownCallException,
                 Catch::Message("A call was made to a method that has not been "
                     "mocked."));
         }
@@ -351,7 +351,7 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
         // Perform the call and verify it throws an UnknownCallException.
         REQUIRE_THROWS_MATCHES(
             mock.get().getInt(),
-            IMock::UnknownCallException,
+            IMock::Exception::UnknownCallException,
             Catch::Message("A call was made to a method that has not been "
                 "mocked."));
     }
@@ -430,7 +430,7 @@ TEST_CASE("can mock an interface without any return value",
         // Perform the call and verify it throws an UnknownCallException.
         REQUIRE_THROWS_MATCHES(
             mock.get().setInt(1),
-            IMock::UnknownCallException,
+            IMock::Exception::UnknownCallException,
             Catch::Message("A call was made to a method that has not been "
                 "mocked."));
     }
@@ -461,7 +461,7 @@ TEST_CASE("can mock an interface without any return value",
             // Perform the call and verify it throws an UnmockedCallException.
             REQUIRE_THROWS_MATCHES(
                 mock.get().setInt(2),
-                IMock::UnmockedCallException,
+                IMock::Exception::UnmockedCallException,
                 Catch::Message("A call was made to a method that has been "
                     "mocked but the arguments does not match the mocked "
                     "arguments."));
@@ -561,7 +561,7 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
         // Perform the call and verify it throws an UnknownCallException.
         REQUIRE_THROWS_MATCHES(
             mock.get().setInt(NoCopy(1)),
-            IMock::UnknownCallException,
+            IMock::Exception::UnknownCallException,
             Catch::Message("A call was made to a method that has not been "
                 "mocked."));
     }
@@ -592,7 +592,7 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
             // Perform the call and verify it throws an UnmockedCallException.
             REQUIRE_THROWS_MATCHES(
                 mock.get().setInt(NoCopy(2)),
-                IMock::UnmockedCallException,
+                IMock::Exception::UnmockedCallException,
                 Catch::Message("A call was made to a method that has been "
                     "mocked but the arguments does not match the mocked "
                     "arguments."));
