@@ -1,17 +1,17 @@
 #pragma once
 
-#include <MockCaseCallCount.hpp>
-
 #include <exception>
 #include <map>
 #include <memory>
 #include <sstream>
 #include <type_traits>
 
-#include <exception/WrongCallCountException.hpp>
 #include <exception/UnknownCallException.hpp>
+#include <exception/UnmockedCallException.hpp>
+#include <exception/WrongCallCountException.hpp>
 #include <internal/VirtualOffset.hpp>
 #include <IReturnValue.hpp>
+#include <MockCaseCallCount.hpp>
 
 namespace IMock {
 

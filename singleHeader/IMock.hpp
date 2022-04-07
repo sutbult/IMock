@@ -41,6 +41,33 @@ const char* MockException::what() const noexcept {
 
 namespace IMock::Exception {
 
+class UnknownCallException : public MockException {
+    public:
+        UnknownCallException();
+};
+
+UnknownCallException::UnknownCallException()
+    : MockException("A call was made to a method that has not been mocked.") {
+}
+
+}
+
+namespace IMock::Exception {
+
+class UnmockedCallException : public MockException {
+    public:
+        UnmockedCallException();
+};
+
+UnmockedCallException::UnmockedCallException()
+    : MockException("A call was made to a method that has been mocked but the "
+        "arguments does not match the mocked arguments.") {
+}
+
+}
+
+namespace IMock::Exception {
+
 class WrongCallCountException : public MockException {
     public:
         WrongCallCountException(
@@ -85,88 +112,6 @@ std::string WrongCallCountException::getMessage(
     out << ".";
 
     return out.str();
-}
-
-}
-
-namespace IMock::Internal {
-
-class MockCaseMutableCallCount {
-    private:
-        int _callCount;
-
-    public:
-        MockCaseMutableCallCount()
-            : _callCount(0) {
-        }
-
-        void increase() {
-            _callCount++;
-        }
-
-        int getCallCount() {
-            return _callCount;
-        }
-};
-
-}
-
-namespace IMock {
-
-class MockCaseCallCount {
-    private:
-        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
-
-    public:
-        MockCaseCallCount(
-            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount) 
-            : _callCount(std::move(callCount)) {
-        }
-    
-        int getCallCount() {
-            return _callCount->getCallCount();
-        }
-
-        void verifyCallCount(int expectedCallCount) {
-            int actualCallCount = getCallCount();
-
-            if(actualCallCount != expectedCallCount) {
-                throw Exception::WrongCallCountException(
-                    expectedCallCount,
-                    actualCallCount);
-            }
-        }
-
-        void verifyCalledOnce() {
-            verifyCallCount(1);
-        }
-
-        void verifyNeverCalled() {
-            verifyCallCount(0);
-        }
-};
-
-}
-
-namespace IMock::Exception {
-
-class UnknownCallException : public MockException {
-    public:
-        UnknownCallException();
-};
-
-UnknownCallException::UnknownCallException()
-    : MockException("A call was made to a method that has not been mocked.") {
-}
-
-class UnmockedCallException : public MockException {
-    public:
-        UnmockedCallException();
-};
-
-UnmockedCallException::UnmockedCallException()
-    : MockException("A call was made to a method that has been mocked but the "
-        "arguments does not match the mocked arguments.") {
 }
 
 }
@@ -298,6 +243,65 @@ class NonVoidReturnValue : public IReturnValue<TReturn> {
         
         virtual TReturn getReturnValue() override {
             return _returnValue;
+        }
+};
+
+}
+
+namespace IMock::Internal {
+
+class MockCaseMutableCallCount {
+    private:
+        int _callCount;
+
+    public:
+        MockCaseMutableCallCount()
+            : _callCount(0) {
+        }
+
+        void increase() {
+            _callCount++;
+        }
+
+        int getCallCount() {
+            return _callCount;
+        }
+};
+
+}
+
+namespace IMock {
+
+class MockCaseCallCount {
+    private:
+        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
+
+    public:
+        MockCaseCallCount(
+            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount) 
+            : _callCount(std::move(callCount)) {
+        }
+    
+        int getCallCount() {
+            return _callCount->getCallCount();
+        }
+
+        void verifyCallCount(int expectedCallCount) {
+            int actualCallCount = getCallCount();
+
+            if(actualCallCount != expectedCallCount) {
+                throw Exception::WrongCallCountException(
+                    expectedCallCount,
+                    actualCallCount);
+            }
+        }
+
+        void verifyCalledOnce() {
+            verifyCallCount(1);
+        }
+
+        void verifyNeverCalled() {
+            verifyCallCount(0);
         }
 };
 
