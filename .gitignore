@@ -12,3 +12,4 @@ coverage
 
 # Outputted test coverage.
 lcov.info
+lcov.info.raw

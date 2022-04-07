@@ -6,12 +6,10 @@ namespace IMock::Exception {
 
 class UnmockedCallException : public MockException {
     public:
-        UnmockedCallException();
+        UnmockedCallException()
+            : MockException("A call was made to a method that has been mocked "
+                "but the arguments does not match the mocked arguments.") {
+        }
 };
-
-UnmockedCallException::UnmockedCallException()
-    : MockException("A call was made to a method that has been mocked but the "
-        "arguments does not match the mocked arguments.") {
-}
 
 }

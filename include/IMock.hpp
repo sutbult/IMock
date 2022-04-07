@@ -1,6 +1,7 @@
 #pragma once
 
 #include <exception>
+#include <functional>
 #include <map>
 #include <memory>
 #include <sstream>
@@ -9,6 +10,7 @@
 #include <exception/UnknownCallException.hpp>
 #include <exception/UnmockedCallException.hpp>
 #include <exception/WrongCallCountException.hpp>
+#include <internal/UnknownCall.hpp>
 #include <internal/VirtualOffset.hpp>
 #include <IReturnValue.hpp>
 #include <MockCaseCallCount.hpp>
@@ -114,10 +116,6 @@ class MockedCase : public ICase<TReturn, TArguments...> {
             }
         }
 };
-
-void unknown(void*) {
-    throw Exception::UnknownCallException();
-}
 
 }
 
@@ -263,7 +261,7 @@ class Mock {
             std::fill(
                 _virtualTable.get(),
                 _virtualTable.get() + _virtualTableSize,
-                reinterpret_cast<void*>(internal::unknown));
+                reinterpret_cast<void*>(Internal::UnknownCall::onUnknownCall));
         }
 
         virtual ~Mock() {

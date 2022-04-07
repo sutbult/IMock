@@ -643,6 +643,14 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
     }
 }
 
+/// See IMockSecondary.hpp
+void mockSecondaryFile();
+
+TEST_CASE("can mock an interface in a secondary file") {
+    // Call mockSecondaryFile.
+    REQUIRE_NOTHROW(mockSecondaryFile());
+}
+
 TEST_CASE("benchmark", "[.][benchmark]") {
     // Declare a utility class.
     class HeavyMock {

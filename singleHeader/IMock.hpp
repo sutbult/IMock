@@ -1,6 +1,7 @@
 #pragma once
 
 #include <exception>
+#include <functional>
 #include <map>
 #include <memory>
 #include <sstream>
@@ -19,23 +20,18 @@ class MockException : public std::exception {
         /// Creates a MockException.
         ///
         /// @param message An explanation of what went wrong.
-        MockException(std::string message);
+        MockException(std::string message)
+            : message(message) {
+        }
 
         /// An override of std::exception::what() that returns the message.
         ///
         /// @return A constant pointer to the message.
-        const char* what() const noexcept override;
+        const char* what() const noexcept override {
+            // Return a constant pointer to the message.
+            return message.c_str();
+        }
 };
-
-MockException::MockException(
-    std::string message)
-    : message(message) {
-}
-
-const char* MockException::what() const noexcept {
-    // Return a constant pointer to the message.
-    return message.c_str();
-}
 
 }
 
@@ -43,12 +39,11 @@ namespace IMock::Exception {
 
 class UnknownCallException : public MockException {
     public:
-        UnknownCallException();
+        UnknownCallException()
+            : MockException("A call was made to a method that has not been "
+                "mocked.") {
+        }
 };
-
-UnknownCallException::UnknownCallException()
-    : MockException("A call was made to a method that has not been mocked.") {
-}
 
 }
 
@@ -56,13 +51,11 @@ namespace IMock::Exception {
 
 class UnmockedCallException : public MockException {
     public:
-        UnmockedCallException();
+        UnmockedCallException()
+            : MockException("A call was made to a method that has been mocked "
+                "but the arguments does not match the mocked arguments.") {
+        }
 };
-
-UnmockedCallException::UnmockedCallException()
-    : MockException("A call was made to a method that has been mocked but the "
-        "arguments does not match the mocked arguments.") {
-}
 
 }
 
@@ -72,47 +65,53 @@ class WrongCallCountException : public MockException {
     public:
         WrongCallCountException(
             int expectedCallCount,
-            int actualCallCount);
+            int actualCallCount) 
+            : MockException(getMessage(
+                expectedCallCount,
+                actualCallCount)) {
+        }
 
     private:
         static std::string getMessage(
             int expectedCallCount,
-            int actualCallCount);
+            int actualCallCount) {
+            std::stringstream out;
+
+            out << "Expected the method to be called "
+                << expectedCallCount
+                << " time";
+            
+            if(expectedCallCount != 1) {
+                out << "s";
+            }
+
+            out << " but it was called "
+                << actualCallCount
+                << " time";
+
+            if(actualCallCount != 1) {
+                out << "s";
+            }
+
+            out << ".";
+
+            return out.str();
+        }
 };
 
-WrongCallCountException::WrongCallCountException(
-    int expectedCallCount,
-    int actualCallCount)
-    : MockException(getMessage(
-        expectedCallCount,
-        actualCallCount)) {
 }
 
-std::string WrongCallCountException::getMessage(
-    int expectedCallCount,
-    int actualCallCount) {
-    std::stringstream out;
+namespace IMock::Internal {
 
-    out << "Expected the method to be called "
-        << expectedCallCount
-        << " time";
-    
-    if(expectedCallCount != 1) {
-        out << "s";
-    }
+class UnknownCall {
+    public:
+        static void onUnknownCall(void*) {
+            throw Exception::UnknownCallException();
+        }
 
-    out << " but it was called "
-        << actualCallCount
-        << " time";
-
-    if(actualCallCount != 1) {
-        out << "s";
-    }
-
-    out << ".";
-
-    return out.str();
-}
+    private:
+        UnknownCall();
+};
 
 }
 
@@ -409,10 +408,6 @@ class MockedCase : public ICase<TReturn, TArguments...> {
         }
 };
 
-void unknown(void*) {
-    throw Exception::UnknownCallException();
-}
-
 }
 
 typedef unsigned int ID;
@@ -557,7 +552,7 @@ class Mock {
             std::fill(
                 _virtualTable.get(),
                 _virtualTable.get() + _virtualTableSize,
-                reinterpret_cast<void*>(internal::unknown));
+                reinterpret_cast<void*>(Internal::UnknownCall::onUnknownCall));
         }
 
         virtual ~Mock() {

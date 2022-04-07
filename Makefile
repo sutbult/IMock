@@ -64,6 +64,7 @@ build-with-single-header: merge-headers
 		-Itest/include \
 		-IsingleHeader \
 		test/src/IMock.cpp \
+		test/src/IMockSecondary.cpp \
 		test/src/main.cpp \
 		-o build/IMockTestWithSingleHeader
 
