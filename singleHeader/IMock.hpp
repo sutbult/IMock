@@ -89,6 +89,65 @@ std::string WrongCallCountException::getMessage(
 
 }
 
+namespace IMock::Internal {
+
+class MockCaseMutableCallCount {
+    private:
+        int _callCount;
+
+    public:
+        MockCaseMutableCallCount()
+            : _callCount(0) {
+        }
+
+        void increase() {
+            _callCount++;
+        }
+
+        int getCallCount() {
+            return _callCount;
+        }
+};
+
+}
+
+namespace IMock {
+
+class MockCaseCallCount {
+    private:
+        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
+
+    public:
+        MockCaseCallCount(
+            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount) 
+            : _callCount(std::move(callCount)) {
+        }
+    
+        int getCallCount() {
+            return _callCount->getCallCount();
+        }
+
+        void verifyCallCount(int expectedCallCount) {
+            int actualCallCount = getCallCount();
+
+            if(actualCallCount != expectedCallCount) {
+                throw Exception::WrongCallCountException(
+                    expectedCallCount,
+                    actualCallCount);
+            }
+        }
+
+        void verifyCalledOnce() {
+            verifyCallCount(1);
+        }
+
+        void verifyNeverCalled() {
+            verifyCallCount(0);
+        }
+};
+
+}
+
 namespace IMock::Exception {
 
 class UnknownCallException : public MockException {
@@ -248,61 +307,6 @@ namespace IMock {
 
 namespace internal {
 
-class MockCaseMutableCallCount {
-    private:
-        int _callCount;
-
-    public:
-        MockCaseMutableCallCount()
-            : _callCount(0) {
-        }
-
-        void increase() {
-            _callCount++;
-        }
-
-        int getCallCount() {
-            return _callCount;
-        }
-};
-
-}
-
-class MockCaseCallCount {
-    private:
-        std::shared_ptr<internal::MockCaseMutableCallCount> _callCount;
-
-    public:
-        MockCaseCallCount(
-            std::shared_ptr<internal::MockCaseMutableCallCount> callCount) 
-            : _callCount(std::move(callCount)) {
-        }
-    
-        int getCallCount() {
-            return _callCount->getCallCount();
-        }
-
-        void verifyCallCount(int expectedCallCount) {
-            int actualCallCount = getCallCount();
-
-            if(actualCallCount != expectedCallCount) {
-                throw Exception::WrongCallCountException(
-                    expectedCallCount,
-                    actualCallCount);
-            }
-        }
-
-        void verifyCalledOnce() {
-            verifyCallCount(1);
-        }
-
-        void verifyNeverCalled() {
-            verifyCallCount(0);
-        }
-};
-
-namespace internal {
-
 template<typename _Tp, typename... _Args>
 inline std::unique_ptr<_Tp> make_unique(_Args&&... __args)
 {
@@ -369,14 +373,14 @@ template <typename TReturn, typename ...TArguments>
 class MockedCase : public ICase<TReturn, TArguments...> {
     private:
         std::unique_ptr<ICase<TReturn, TArguments...>> _previousCase;
-        std::shared_ptr<MockCaseMutableCallCount> _callCount;
+        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
         std::unique_ptr<IReturnValue<TReturn>> _returnValue;
         std::tuple<TArguments...> _arguments;
 
     public:
         MockedCase(
             std::unique_ptr<ICase<TReturn, TArguments...>> previousCase,
-            std::shared_ptr<MockCaseMutableCallCount> callCount,
+            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount,
             std::unique_ptr<IReturnValue<TReturn>> returnValue,
             std::tuple<TArguments...> arguments)
             : _previousCase(std::move(previousCase))
@@ -583,8 +587,8 @@ class Mock {
                 previousCase = reinterpret_cast<std::unique_ptr<internal::ICase<
                     TReturn, TArguments...>>*>(&_cases.at(virtualOffset));
             
-            std::shared_ptr<internal::MockCaseMutableCallCount> callCountPointer 
-                = std::make_shared<internal::MockCaseMutableCallCount>();
+            std::shared_ptr<Internal::MockCaseMutableCallCount> callCountPointer 
+                = std::make_shared<Internal::MockCaseMutableCallCount>();
             
             _cases[virtualOffset] = internal::make_unique<internal::MockedCase<
                 TReturn, TArguments...>>(
