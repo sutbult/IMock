@@ -26,6 +26,7 @@ build-lcov-filter: init
 test: build-lcov-filter build
 	find . -name "*.gcda" -type f -delete
 	build/IMockTest ${filter}
+	find . -name "IMockSecondary.cpp.gcda" -type f -delete
 	lcov \
 		--capture \
 		--directory . \
