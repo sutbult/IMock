@@ -213,6 +213,17 @@ VirtualTableSize getVirtualTableSize() {
 
 }
 
+namespace IMock::Internal {
+
+template<typename _Tp, typename... _Args>
+std::unique_ptr<_Tp> make_unique(_Args&&... __args)
+{
+    return std::unique_ptr<_Tp>(
+        new _Tp(std::forward<_Args>(__args)...));
+}
+
+}
+
 namespace IMock::internal {
 
 template <typename TReturn>
@@ -309,13 +320,6 @@ class MockCaseCallCount {
 namespace IMock {
 
 namespace internal {
-
-template<typename _Tp, typename... _Args>
-inline std::unique_ptr<_Tp> make_unique(_Args&&... __args)
-{
-    return std::unique_ptr<_Tp>(
-        new _Tp(std::forward<_Args>(__args)...));
-}
 
 // Trick to statically produce a list of integers. Solution taken from:
 // https://stackoverflow.com/a/7858971/6188897
@@ -505,7 +509,7 @@ class Mock {
                     typename std::enable_if<!std::is_void<R>::value,
                     TReturn>::type returnValue) {
                     std::unique_ptr<internal::IReturnValue<TReturn>>
-                        wrappedReturnValue = internal::make_unique<
+                        wrappedReturnValue = Internal::make_unique<
                         internal::NonVoidReturnValue<TReturn>>(returnValue);
 
                     return _mock->addCase<id, TReturn, TArguments...>(
@@ -519,7 +523,7 @@ class Mock {
                     nullptr>
                 MockCaseCallCount returns() {
                     std::unique_ptr<internal::IReturnValue<TReturn>>
-                        wrappedReturnValue = internal::make_unique<
+                        wrappedReturnValue = Internal::make_unique<
                         internal::VoidReturnValue>();
 
                     return _mock->addCase<id, TReturn, TArguments...>(
@@ -577,7 +581,7 @@ class Mock {
 
             bool methodHasNoMocks = _cases.count(virtualOffset) == 0;
             if(methodHasNoMocks) {
-                _cases[virtualOffset] = internal::make_unique<
+                _cases[virtualOffset] = Internal::make_unique<
                     internal::UnmockedCase<TReturn, TArguments...>>();
                 _virtualTable.get()[virtualOffset] =
                     reinterpret_cast<void*>(onCall<id, TReturn, TArguments...>);
@@ -589,7 +593,7 @@ class Mock {
             std::shared_ptr<Internal::MockCaseMutableCallCount> callCountPointer 
                 = std::make_shared<Internal::MockCaseMutableCallCount>();
             
-            _cases[virtualOffset] = internal::make_unique<internal::MockedCase<
+            _cases[virtualOffset] = Internal::make_unique<internal::MockedCase<
                 TReturn, TArguments...>>(
                     std::move(*previousCase),
                     callCountPointer,

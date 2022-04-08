@@ -525,7 +525,7 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
             ///
             /// @param value The value to held.
             NoCopy(int value)
-                : _value(IMock::internal::make_unique<int>(std::move(value))) {
+                : _value(IMock::Internal::make_unique<int>(std::move(value))) {
             }
 
             /// Gets the value.
