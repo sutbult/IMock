@@ -50,18 +50,6 @@ class UnknownCallException : public MockException {
 
 namespace IMock::Exception {
 
-class UnmockedCallException : public MockException {
-    public:
-        UnmockedCallException()
-            : MockException("A call was made to a method that has been mocked "
-                "but the arguments does not match the mocked arguments.") {
-        }
-};
-
-}
-
-namespace IMock::Exception {
-
 class WrongCallCountException : public MockException {
     public:
         WrongCallCountException(
@@ -97,6 +85,18 @@ class WrongCallCountException : public MockException {
             out << ".";
 
             return out.str();
+        }
+};
+
+}
+
+namespace IMock::Exception {
+
+class UnmockedCallException : public MockException {
+    public:
+        UnmockedCallException()
+            : MockException("A call was made to a method that has been mocked "
+                "but the arguments does not match the mocked arguments.") {
         }
 };
 
@@ -143,6 +143,159 @@ class Apply {
                 callback,
                 self,
                 std::move(arguments));
+        }
+};
+
+}
+
+namespace IMock::Internal {
+
+template <typename TReturn>
+class IReturnValue {
+    public:
+        virtual ~IReturnValue() {
+        }
+
+        virtual TReturn getReturnValue() = 0;
+};
+
+class VoidReturnValue : public IReturnValue<void> {
+    public:
+        virtual void getReturnValue() override {
+        }
+};
+
+template <typename TReturn>
+class NonVoidReturnValue : public IReturnValue<TReturn> {
+    private:
+        TReturn _returnValue;
+
+    public:
+        NonVoidReturnValue(TReturn returnValue)
+            : _returnValue(returnValue) {
+        }
+        
+        virtual TReturn getReturnValue() override {
+            return _returnValue;
+        }
+};
+
+}
+
+namespace IMock::Internal {
+
+class MockCaseMutableCallCount {
+    private:
+        int _callCount;
+
+    public:
+        MockCaseMutableCallCount()
+            : _callCount(0) {
+        }
+
+        void increase() {
+            _callCount++;
+        }
+
+        int getCallCount() {
+            return _callCount;
+        }
+};
+
+}
+
+namespace IMock {
+
+class MockCaseCallCount {
+    private:
+        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
+
+    public:
+        MockCaseCallCount(
+            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount) 
+            : _callCount(std::move(callCount)) {
+        }
+    
+        int getCallCount() {
+            return _callCount->getCallCount();
+        }
+
+        void verifyCallCount(int expectedCallCount) {
+            int actualCallCount = getCallCount();
+
+            if(actualCallCount != expectedCallCount) {
+                throw Exception::WrongCallCountException(
+                    expectedCallCount,
+                    actualCallCount);
+            }
+        }
+
+        void verifyCalledOnce() {
+            verifyCallCount(1);
+        }
+
+        void verifyNeverCalled() {
+            verifyCallCount(0);
+        }
+};
+
+}
+
+namespace IMock::Internal {
+
+class ICaseNonGeneric {
+    public:
+        virtual ~ICaseNonGeneric() {
+        }
+};
+
+template <typename TReturn, typename ...TArguments> 
+class ICase : public ICaseNonGeneric {
+    public:
+        virtual TReturn call(TArguments... arguments) = 0;
+};
+
+template <typename TReturn, typename ...TArguments>
+class UnmockedCase : public ICase<TReturn, TArguments...> {
+    public:
+        virtual TReturn call(TArguments... arguments) override {
+            throw Exception::UnmockedCallException();
+        }
+};
+
+template <typename TReturn, typename ...TArguments>
+class MockedCase : public ICase<TReturn, TArguments...> {
+    private:
+        std::unique_ptr<ICase<TReturn, TArguments...>> _previousCase;
+        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
+        std::unique_ptr<IReturnValue<TReturn>> _returnValue;
+        std::tuple<TArguments...> _arguments;
+
+    public:
+        MockedCase(
+            std::unique_ptr<ICase<TReturn, TArguments...>> previousCase,
+            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount,
+            std::unique_ptr<IReturnValue<TReturn>> returnValue,
+            std::tuple<TArguments...> arguments)
+            : _previousCase(std::move(previousCase))
+            , _callCount(std::move(callCount))
+            , _returnValue(std::move(returnValue))
+            , _arguments(std::move(arguments)) {
+        }
+
+        virtual TReturn call(TArguments... arguments) override {
+            std::tuple<TArguments...> tupleArguments(std::move(arguments)...);
+            bool match = tupleArguments == _arguments;
+            if(match) {
+                _callCount->increase();
+                return _returnValue->getReturnValue();
+            }
+            else {
+                return Internal::Apply::apply(
+                    &ICase<TReturn, TArguments...>::call,
+                    *_previousCase,
+                    std::move(tupleArguments));
+            }
         }
 };
 
@@ -271,160 +424,7 @@ std::unique_ptr<_Tp> make_unique(_Args&&... __args)
 
 }
 
-namespace IMock::internal {
-
-template <typename TReturn>
-class IReturnValue {
-    public:
-        virtual ~IReturnValue() {
-        }
-
-        virtual TReturn getReturnValue() = 0;
-};
-
-class VoidReturnValue : public IReturnValue<void> {
-    public:
-        virtual void getReturnValue() override {
-        }
-};
-
-template <typename TReturn>
-class NonVoidReturnValue : public IReturnValue<TReturn> {
-    private:
-        TReturn _returnValue;
-
-    public:
-        NonVoidReturnValue(TReturn returnValue)
-            : _returnValue(returnValue) {
-        }
-        
-        virtual TReturn getReturnValue() override {
-            return _returnValue;
-        }
-};
-
-}
-
-namespace IMock::Internal {
-
-class MockCaseMutableCallCount {
-    private:
-        int _callCount;
-
-    public:
-        MockCaseMutableCallCount()
-            : _callCount(0) {
-        }
-
-        void increase() {
-            _callCount++;
-        }
-
-        int getCallCount() {
-            return _callCount;
-        }
-};
-
-}
-
 namespace IMock {
-
-class MockCaseCallCount {
-    private:
-        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
-
-    public:
-        MockCaseCallCount(
-            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount) 
-            : _callCount(std::move(callCount)) {
-        }
-    
-        int getCallCount() {
-            return _callCount->getCallCount();
-        }
-
-        void verifyCallCount(int expectedCallCount) {
-            int actualCallCount = getCallCount();
-
-            if(actualCallCount != expectedCallCount) {
-                throw Exception::WrongCallCountException(
-                    expectedCallCount,
-                    actualCallCount);
-            }
-        }
-
-        void verifyCalledOnce() {
-            verifyCallCount(1);
-        }
-
-        void verifyNeverCalled() {
-            verifyCallCount(0);
-        }
-};
-
-}
-
-namespace IMock {
-
-namespace internal {
-
-class ICaseNonGeneric {
-    public:
-        virtual ~ICaseNonGeneric() {
-        }
-};
-
-template <typename TReturn, typename ...TArguments> 
-class ICase : public ICaseNonGeneric {
-    public:
-        virtual TReturn call(TArguments... arguments) = 0;
-};
-
-template <typename TReturn, typename ...TArguments>
-class UnmockedCase : public ICase<TReturn, TArguments...> {
-    public:
-        virtual TReturn call(TArguments... arguments) override {
-            throw Exception::UnmockedCallException();
-        }
-};
-
-template <typename TReturn, typename ...TArguments>
-class MockedCase : public ICase<TReturn, TArguments...> {
-    private:
-        std::unique_ptr<ICase<TReturn, TArguments...>> _previousCase;
-        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
-        std::unique_ptr<IReturnValue<TReturn>> _returnValue;
-        std::tuple<TArguments...> _arguments;
-
-    public:
-        MockedCase(
-            std::unique_ptr<ICase<TReturn, TArguments...>> previousCase,
-            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount,
-            std::unique_ptr<IReturnValue<TReturn>> returnValue,
-            std::tuple<TArguments...> arguments)
-            : _previousCase(std::move(previousCase))
-            , _callCount(std::move(callCount))
-            , _returnValue(std::move(returnValue))
-            , _arguments(std::move(arguments)) {
-        }
-
-        virtual TReturn call(TArguments... arguments) override {
-            std::tuple<TArguments...> tupleArguments(std::move(arguments)...);
-            bool match = tupleArguments == _arguments;
-            if(match) {
-                _callCount->increase();
-                return _returnValue->getReturnValue();
-            }
-            else {
-                return Internal::Apply::apply(
-                    &ICase<TReturn, TArguments...>::call,
-                    *_previousCase,
-                    std::move(tupleArguments));
-            }
-        }
-};
-
-}
 
 typedef unsigned int ID;
 
@@ -520,9 +520,9 @@ class Mock {
                 MockCaseCallCount returns(
                     typename std::enable_if<!std::is_void<R>::value,
                     TReturn>::type returnValue) {
-                    std::unique_ptr<internal::IReturnValue<TReturn>>
+                    std::unique_ptr<Internal::IReturnValue<TReturn>>
                         wrappedReturnValue = Internal::make_unique<
-                        internal::NonVoidReturnValue<TReturn>>(returnValue);
+                        Internal::NonVoidReturnValue<TReturn>>(returnValue);
 
                     return _mock->addCase<id, TReturn, TArguments...>(
                         _method,
@@ -534,9 +534,9 @@ class Mock {
                     typename std::enable_if<std::is_void<R>::value, R>::type* =
                     nullptr>
                 MockCaseCallCount returns() {
-                    std::unique_ptr<internal::IReturnValue<TReturn>>
+                    std::unique_ptr<Internal::IReturnValue<TReturn>>
                         wrappedReturnValue = Internal::make_unique<
-                        internal::VoidReturnValue>();
+                        Internal::VoidReturnValue>();
 
                     return _mock->addCase<id, TReturn, TArguments...>(
                         _method,
@@ -548,7 +548,7 @@ class Mock {
         std::map<ID, Internal::VirtualOffset> _virtualOffsets;
         std::map<
             Internal::VirtualOffset,
-            std::unique_ptr<internal::ICaseNonGeneric>
+            std::unique_ptr<Internal::ICaseNonGeneric>
         > _cases;
 
         Internal::VirtualTableSize _virtualTableSize;
@@ -581,7 +581,7 @@ class Mock {
         template <ID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
             TReturn (TInterface::*method)(TArguments...),
-            std::unique_ptr<internal::IReturnValue<TReturn>> returnValue,
+            std::unique_ptr<Internal::IReturnValue<TReturn>> returnValue,
             std::tuple<TArguments...> arguments) {
             Internal::VirtualOffset virtualOffset =
                 Internal::getVirtualOffset(method);
@@ -594,18 +594,18 @@ class Mock {
             bool methodHasNoMocks = _cases.count(virtualOffset) == 0;
             if(methodHasNoMocks) {
                 _cases[virtualOffset] = Internal::make_unique<
-                    internal::UnmockedCase<TReturn, TArguments...>>();
+                    Internal::UnmockedCase<TReturn, TArguments...>>();
                 _virtualTable.get()[virtualOffset] =
                     reinterpret_cast<void*>(onCall<id, TReturn, TArguments...>);
             }
-            std::unique_ptr<internal::ICase<TReturn, TArguments...>>*
-                previousCase = reinterpret_cast<std::unique_ptr<internal::ICase<
+            std::unique_ptr<Internal::ICase<TReturn, TArguments...>>*
+                previousCase = reinterpret_cast<std::unique_ptr<Internal::ICase<
                     TReturn, TArguments...>>*>(&_cases.at(virtualOffset));
             
             std::shared_ptr<Internal::MockCaseMutableCallCount> callCountPointer 
                 = std::make_shared<Internal::MockCaseMutableCallCount>();
             
-            _cases[virtualOffset] = Internal::make_unique<internal::MockedCase<
+            _cases[virtualOffset] = Internal::make_unique<Internal::MockedCase<
                 TReturn, TArguments...>>(
                     std::move(*previousCase),
                     callCountPointer,
@@ -627,10 +627,10 @@ class Mock {
         static TReturn onCall(MockFake* mockFake, TArguments... arguments) {
             Mock* mock = mockFake->getMock();
             Internal::VirtualOffset virtualOffset = mock->_virtualOffsets[id];
-            internal::ICaseNonGeneric* caseNonGeneric =
+            Internal::ICaseNonGeneric* caseNonGeneric =
                 mock->_cases[virtualOffset].get();
-            internal::ICase<TReturn, TArguments...>* _case =
-                reinterpret_cast<internal::ICase<TReturn, TArguments...>*>(
+            Internal::ICase<TReturn, TArguments...>* _case =
+                reinterpret_cast<Internal::ICase<TReturn, TArguments...>*>(
                     caseNonGeneric);
             return _case->call(std::move(arguments)...);
         }

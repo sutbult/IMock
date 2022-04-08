@@ -8,9 +8,8 @@
 #include <type_traits>
 
 #include <exception/UnknownCallException.hpp>
-#include <exception/UnmockedCallException.hpp>
 #include <exception/WrongCallCountException.hpp>
-#include <internal/Apply.hpp>
+#include <internal/Case.hpp>
 #include <internal/UnknownCall.hpp>
 #include <internal/VirtualOffset.hpp>
 #include <internal/make_unique.hpp>
@@ -18,66 +17,6 @@
 #include <MockCaseCallCount.hpp>
 
 namespace IMock {
-
-namespace internal {
-
-class ICaseNonGeneric {
-    public:
-        virtual ~ICaseNonGeneric() {
-        }
-};
-
-template <typename TReturn, typename ...TArguments> 
-class ICase : public ICaseNonGeneric {
-    public:
-        virtual TReturn call(TArguments... arguments) = 0;
-};
-
-template <typename TReturn, typename ...TArguments>
-class UnmockedCase : public ICase<TReturn, TArguments...> {
-    public:
-        virtual TReturn call(TArguments... arguments) override {
-            throw Exception::UnmockedCallException();
-        }
-};
-
-template <typename TReturn, typename ...TArguments>
-class MockedCase : public ICase<TReturn, TArguments...> {
-    private:
-        std::unique_ptr<ICase<TReturn, TArguments...>> _previousCase;
-        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
-        std::unique_ptr<IReturnValue<TReturn>> _returnValue;
-        std::tuple<TArguments...> _arguments;
-
-    public:
-        MockedCase(
-            std::unique_ptr<ICase<TReturn, TArguments...>> previousCase,
-            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount,
-            std::unique_ptr<IReturnValue<TReturn>> returnValue,
-            std::tuple<TArguments...> arguments)
-            : _previousCase(std::move(previousCase))
-            , _callCount(std::move(callCount))
-            , _returnValue(std::move(returnValue))
-            , _arguments(std::move(arguments)) {
-        }
-
-        virtual TReturn call(TArguments... arguments) override {
-            std::tuple<TArguments...> tupleArguments(std::move(arguments)...);
-            bool match = tupleArguments == _arguments;
-            if(match) {
-                _callCount->increase();
-                return _returnValue->getReturnValue();
-            }
-            else {
-                return Internal::Apply::apply(
-                    &ICase<TReturn, TArguments...>::call,
-                    *_previousCase,
-                    std::move(tupleArguments));
-            }
-        }
-};
-
-}
 
 typedef unsigned int ID;
 
@@ -173,9 +112,9 @@ class Mock {
                 MockCaseCallCount returns(
                     typename std::enable_if<!std::is_void<R>::value,
                     TReturn>::type returnValue) {
-                    std::unique_ptr<internal::IReturnValue<TReturn>>
+                    std::unique_ptr<Internal::IReturnValue<TReturn>>
                         wrappedReturnValue = Internal::make_unique<
-                        internal::NonVoidReturnValue<TReturn>>(returnValue);
+                        Internal::NonVoidReturnValue<TReturn>>(returnValue);
 
                     return _mock->addCase<id, TReturn, TArguments...>(
                         _method,
@@ -187,9 +126,9 @@ class Mock {
                     typename std::enable_if<std::is_void<R>::value, R>::type* =
                     nullptr>
                 MockCaseCallCount returns() {
-                    std::unique_ptr<internal::IReturnValue<TReturn>>
+                    std::unique_ptr<Internal::IReturnValue<TReturn>>
                         wrappedReturnValue = Internal::make_unique<
-                        internal::VoidReturnValue>();
+                        Internal::VoidReturnValue>();
 
                     return _mock->addCase<id, TReturn, TArguments...>(
                         _method,
@@ -201,7 +140,7 @@ class Mock {
         std::map<ID, Internal::VirtualOffset> _virtualOffsets;
         std::map<
             Internal::VirtualOffset,
-            std::unique_ptr<internal::ICaseNonGeneric>
+            std::unique_ptr<Internal::ICaseNonGeneric>
         > _cases;
 
         Internal::VirtualTableSize _virtualTableSize;
@@ -234,7 +173,7 @@ class Mock {
         template <ID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
             TReturn (TInterface::*method)(TArguments...),
-            std::unique_ptr<internal::IReturnValue<TReturn>> returnValue,
+            std::unique_ptr<Internal::IReturnValue<TReturn>> returnValue,
             std::tuple<TArguments...> arguments) {
             Internal::VirtualOffset virtualOffset =
                 Internal::getVirtualOffset(method);
@@ -247,18 +186,18 @@ class Mock {
             bool methodHasNoMocks = _cases.count(virtualOffset) == 0;
             if(methodHasNoMocks) {
                 _cases[virtualOffset] = Internal::make_unique<
-                    internal::UnmockedCase<TReturn, TArguments...>>();
+                    Internal::UnmockedCase<TReturn, TArguments...>>();
                 _virtualTable.get()[virtualOffset] =
                     reinterpret_cast<void*>(onCall<id, TReturn, TArguments...>);
             }
-            std::unique_ptr<internal::ICase<TReturn, TArguments...>>*
-                previousCase = reinterpret_cast<std::unique_ptr<internal::ICase<
+            std::unique_ptr<Internal::ICase<TReturn, TArguments...>>*
+                previousCase = reinterpret_cast<std::unique_ptr<Internal::ICase<
                     TReturn, TArguments...>>*>(&_cases.at(virtualOffset));
             
             std::shared_ptr<Internal::MockCaseMutableCallCount> callCountPointer 
                 = std::make_shared<Internal::MockCaseMutableCallCount>();
             
-            _cases[virtualOffset] = Internal::make_unique<internal::MockedCase<
+            _cases[virtualOffset] = Internal::make_unique<Internal::MockedCase<
                 TReturn, TArguments...>>(
                     std::move(*previousCase),
                     callCountPointer,
@@ -280,10 +219,10 @@ class Mock {
         static TReturn onCall(MockFake* mockFake, TArguments... arguments) {
             Mock* mock = mockFake->getMock();
             Internal::VirtualOffset virtualOffset = mock->_virtualOffsets[id];
-            internal::ICaseNonGeneric* caseNonGeneric =
+            Internal::ICaseNonGeneric* caseNonGeneric =
                 mock->_cases[virtualOffset].get();
-            internal::ICase<TReturn, TArguments...>* _case =
-                reinterpret_cast<internal::ICase<TReturn, TArguments...>*>(
+            Internal::ICase<TReturn, TArguments...>* _case =
+                reinterpret_cast<Internal::ICase<TReturn, TArguments...>*>(
                     caseNonGeneric);
             return _case->call(std::move(arguments)...);
         }

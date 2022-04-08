@@ -1,6 +1,6 @@
 #pragma once
 
-namespace IMock::internal {
+namespace IMock::Internal {
 
 template <typename TReturn>
 class IReturnValue {
