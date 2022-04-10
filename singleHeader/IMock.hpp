@@ -7,7 +7,12 @@
 #include <sstream>
 #include <string>
 #include <tuple>
-#include <type_traits>
+
+namespace IMock {
+
+typedef unsigned int MockCaseID;
+
+}
 
 namespace IMock::Exception {
 
@@ -31,60 +36,6 @@ class MockException : public std::exception {
         const char* what() const noexcept override {
             // Return a constant pointer to the message.
             return message.c_str();
-        }
-};
-
-}
-
-namespace IMock::Exception {
-
-class UnknownCallException : public MockException {
-    public:
-        UnknownCallException()
-            : MockException("A call was made to a method that has not been "
-                "mocked.") {
-        }
-};
-
-}
-
-namespace IMock::Exception {
-
-class WrongCallCountException : public MockException {
-    public:
-        WrongCallCountException(
-            int expectedCallCount,
-            int actualCallCount) 
-            : MockException(getMessage(
-                expectedCallCount,
-                actualCallCount)) {
-        }
-
-    private:
-        static std::string getMessage(
-            int expectedCallCount,
-            int actualCallCount) {
-            std::stringstream out;
-
-            out << "Expected the method to be called "
-                << expectedCallCount
-                << " time";
-            
-            if(expectedCallCount != 1) {
-                out << "s";
-            }
-
-            out << " but it was called "
-                << actualCallCount
-                << " time";
-
-            if(actualCallCount != 1) {
-                out << "s";
-            }
-
-            out << ".";
-
-            return out.str();
         }
 };
 
@@ -177,6 +128,48 @@ class NonVoidReturnValue : public IReturnValue<TReturn> {
         
         virtual TReturn getReturnValue() override {
             return _returnValue;
+        }
+};
+
+}
+
+namespace IMock::Exception {
+
+class WrongCallCountException : public MockException {
+    public:
+        WrongCallCountException(
+            int expectedCallCount,
+            int actualCallCount) 
+            : MockException(getMessage(
+                expectedCallCount,
+                actualCallCount)) {
+        }
+
+    private:
+        static std::string getMessage(
+            int expectedCallCount,
+            int actualCallCount) {
+            std::stringstream out;
+
+            out << "Expected the method to be called "
+                << expectedCallCount
+                << " time";
+            
+            if(expectedCallCount != 1) {
+                out << "s";
+            }
+
+            out << " but it was called "
+                << actualCallCount
+                << " time";
+
+            if(actualCallCount != 1) {
+                out << "s";
+            }
+
+            out << ".";
+
+            return out.str();
         }
 };
 
@@ -303,6 +296,29 @@ class MockedCase : public ICase<TReturn, TArguments...> {
 
 namespace IMock::Internal {
 
+template<typename _Tp, typename... _Args>
+std::unique_ptr<_Tp> make_unique(_Args&&... __args)
+{
+    return std::unique_ptr<_Tp>(
+        new _Tp(std::forward<_Args>(__args)...));
+}
+
+}
+
+namespace IMock::Exception {
+
+class UnknownCallException : public MockException {
+    public:
+        UnknownCallException()
+            : MockException("A call was made to a method that has not been "
+                "mocked.") {
+        }
+};
+
+}
+
+namespace IMock::Internal {
+
 class UnknownCall {
     public:
         static void onUnknownCall(void*) {
@@ -415,137 +431,28 @@ VirtualTableSize getVirtualTableSize() {
 
 namespace IMock::Internal {
 
-template<typename _Tp, typename... _Args>
-std::unique_ptr<_Tp> make_unique(_Args&&... __args)
-{
-    return std::unique_ptr<_Tp>(
-        new _Tp(std::forward<_Args>(__args)...));
-}
-
-}
-
-namespace IMock {
-
-typedef unsigned int ID;
-
 template <typename TInterface>
-class Mock {
+class InnerMock {
     private:
         struct MockFake {
             private:
                 void** _virtualTable;
-                Mock* _mock;
+                InnerMock* _mock;
 
             public:
                 MockFake(
                     void** virtualTable,
-                    Mock* mock)
+                    InnerMock* mock)
                     : _virtualTable(virtualTable)
                     , _mock(mock) {
                 }
 
-                Mock* getMock() {
+                InnerMock* getMock() {
                     return _mock;
                 }
         };
 
-        template <ID id, typename TReturn, typename ...TArguments>
-        class MockWithMethod;
-
-        template <ID id>
-        class MockWithCounter {
-            private:
-                Mock* _mock;
-
-            public:
-                MockWithCounter(Mock* mock)
-                    : _mock(mock) {
-                }
-
-                template <typename TReturn, typename ...TArguments>
-                MockWithMethod<id, TReturn, TArguments...> withMethod(
-                    TReturn (TInterface::*method)(TArguments...)) {
-                    return MockWithMethod<id, TReturn, TArguments...>(
-                        _mock,
-                        method);
-                }
-        };
-
-        template <ID id, typename TReturn, typename ...TArguments>
-        class MockWithArguments;
-
-        template <ID id, typename TReturn, typename ...TArguments>
-        class MockWithMethod {
-            private:
-                Mock* _mock;
-                TReturn (TInterface::*_method)(TArguments...);
-
-            public:
-                MockWithMethod(
-                    Mock* mock,
-                    TReturn (TInterface::*method)(TArguments...))
-                    : _mock(mock)
-                    , _method(method) {
-                }
-
-                MockWithArguments<id, TReturn, TArguments...> with(
-                    TArguments... arguments) {
-                    return MockWithArguments<id, TReturn, TArguments...>(
-                        _mock,
-                        _method,
-                        std::tuple<TArguments...>(std::move(arguments)...));
-                }
-        };
-
-        template <ID id, typename TReturn, typename ...TArguments>
-        class MockWithArguments {
-            private:
-                Mock* _mock;
-                TReturn (TInterface::*_method)(TArguments...);
-                std::tuple<TArguments...> _arguments;
-
-            public:
-                MockWithArguments(
-                    Mock* mock,
-                    TReturn (TInterface::*method)(TArguments...),
-                    std::tuple<TArguments...> arguments)
-                    : _mock(std::move(mock))
-                    , _method(std::move(method))
-                    , _arguments(std::move(arguments)) {
-                }
-
-                // Solution taken from:
-                // https://eli.thegreenplace.net/2014/sfinae-and-enable_if/
-                template<typename R = TReturn>
-                MockCaseCallCount returns(
-                    typename std::enable_if<!std::is_void<R>::value,
-                    TReturn>::type returnValue) {
-                    std::unique_ptr<Internal::IReturnValue<TReturn>>
-                        wrappedReturnValue = Internal::make_unique<
-                        Internal::NonVoidReturnValue<TReturn>>(returnValue);
-
-                    return _mock->addCase<id, TReturn, TArguments...>(
-                        _method,
-                        std::move(wrappedReturnValue),
-                        std::move(_arguments));
-                }
-
-                template<typename R = TReturn,
-                    typename std::enable_if<std::is_void<R>::value, R>::type* =
-                    nullptr>
-                MockCaseCallCount returns() {
-                    std::unique_ptr<Internal::IReturnValue<TReturn>>
-                        wrappedReturnValue = Internal::make_unique<
-                        Internal::VoidReturnValue>();
-
-                    return _mock->addCase<id, TReturn, TArguments...>(
-                        _method,
-                        std::move(wrappedReturnValue),
-                        std::move(_arguments));
-                }
-        };
-
-        std::map<ID, Internal::VirtualOffset> _virtualOffsets;
+        std::map<MockCaseID, Internal::VirtualOffset> _virtualOffsets;
         std::map<
             Internal::VirtualOffset,
             std::unique_ptr<Internal::ICaseNonGeneric>
@@ -557,7 +464,7 @@ class Mock {
         MockFake _mockFake;
 
     public:
-        Mock() 
+        InnerMock() 
             : _virtualTableSize(Internal::getVirtualTableSize<TInterface>())
             , _virtualTable(
                 new void*[_virtualTableSize],
@@ -571,14 +478,14 @@ class Mock {
                 reinterpret_cast<void*>(Internal::UnknownCall::onUnknownCall));
         }
 
-        virtual ~Mock() {
+        virtual ~InnerMock() {
         }
 
         TInterface& get() {
             return *reinterpret_cast<TInterface*>(&_mockFake);
         }
 
-        template <ID id, typename TReturn, typename ...TArguments>
+        template <MockCaseID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
             TReturn (TInterface::*method)(TArguments...),
             std::unique_ptr<Internal::IReturnValue<TReturn>> returnValue,
@@ -617,15 +524,10 @@ class Mock {
             return callCount;
         }
 
-        template <ID id>
-        MockWithCounter<id> withCounter() {
-            return MockWithCounter<id>(this);
-        }
-
     private:
-        template <ID id, typename TReturn, typename ...TArguments>
+        template <MockCaseID id, typename TReturn, typename ...TArguments>
         static TReturn onCall(MockFake* mockFake, TArguments... arguments) {
-            Mock* mock = mockFake->getMock();
+            InnerMock* mock = mockFake->getMock();
             Internal::VirtualOffset virtualOffset = mock->_virtualOffsets[id];
             Internal::ICaseNonGeneric* caseNonGeneric =
                 mock->_cases[virtualOffset].get();
@@ -633,6 +535,131 @@ class Mock {
                 reinterpret_cast<Internal::ICase<TReturn, TArguments...>*>(
                     caseNonGeneric);
             return _case->call(std::move(arguments)...);
+        }
+};
+
+}
+
+namespace IMock {
+
+template <typename TInterface, MockCaseID id, typename TReturn,
+    typename ...TArguments>
+class MockWithArguments {
+    private:
+        Internal::InnerMock<TInterface>* _mock;
+        TReturn (TInterface::*_method)(TArguments...);
+        std::tuple<TArguments...> _arguments;
+
+    public:
+        MockWithArguments(
+            Internal::InnerMock<TInterface>* mock,
+            TReturn (TInterface::*method)(TArguments...),
+            std::tuple<TArguments...> arguments)
+            : _mock(std::move(mock))
+            , _method(std::move(method))
+            , _arguments(std::move(arguments)) {
+        }
+
+        // Solution taken from:
+        // https://eli.thegreenplace.net/2014/sfinae-and-enable_if/
+        template<typename R = TReturn>
+        MockCaseCallCount returns(
+            typename std::enable_if<!std::is_void<R>::value, TReturn>::type
+                returnValue) {
+            std::unique_ptr<Internal::IReturnValue<TReturn>> wrappedReturnValue
+                = Internal::make_unique<Internal::NonVoidReturnValue<TReturn>>(
+                returnValue);
+
+            return _mock->template addCase<id, TReturn, TArguments...>(
+                _method,
+                std::move(wrappedReturnValue),
+                std::move(_arguments));
+        }
+
+        template<typename R = TReturn,
+            typename std::enable_if<std::is_void<R>::value, R>::type* = nullptr>
+        MockCaseCallCount returns() {
+            std::unique_ptr<Internal::IReturnValue<TReturn>> wrappedReturnValue
+                = Internal::make_unique<Internal::VoidReturnValue>();
+
+            return _mock->template addCase<id, TReturn, TArguments...>(
+                _method,
+                std::move(wrappedReturnValue),
+                std::move(_arguments));
+        }
+};
+
+}
+
+namespace IMock {
+
+template <typename TInterface, MockCaseID id, typename TReturn,
+    typename ...TArguments>
+class MockWithMethod {
+    private:
+        Internal::InnerMock<TInterface>* _mock;
+        TReturn (TInterface::*_method)(TArguments...);
+
+    public:
+        MockWithMethod(
+            Internal::InnerMock<TInterface>* mock,
+            TReturn (TInterface::*method)(TArguments...))
+            : _mock(mock)
+            , _method(method) {
+        }
+
+        MockWithArguments<TInterface, id, TReturn, TArguments...> with(
+            TArguments... arguments) {
+            return MockWithArguments<TInterface, id, TReturn, TArguments...>(
+                _mock,
+                _method,
+                std::tuple<TArguments...>(std::move(arguments)...));
+        }
+};
+
+}
+
+namespace IMock {
+
+template <typename TInterface, MockCaseID id>
+class MockWithID {
+    private:
+        Internal::InnerMock<TInterface>* _mock;
+
+    public:
+        MockWithID(Internal::InnerMock<TInterface>* mock)
+            : _mock(mock) {
+        }
+
+        template <typename TReturn, typename ...TArguments>
+        MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
+            TReturn (TInterface::*method)(TArguments...)) {
+            return MockWithMethod<TInterface, id, TReturn, TArguments...>(
+                _mock,
+                method);
+        }
+};
+
+}
+
+namespace IMock {
+
+template <typename TInterface>
+class Mock {
+    private:
+        Internal::InnerMock<TInterface> _innerMock;
+
+    public:
+        virtual ~Mock() {
+        }
+
+        TInterface& get() {
+            return _innerMock.get();
+        }
+
+        template <MockCaseID id>
+        MockWithID<TInterface, id> withCounter() {
+            return MockWithID<TInterface, id>(&_innerMock);
         }
 };
 
