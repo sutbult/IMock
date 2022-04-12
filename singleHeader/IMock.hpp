@@ -260,14 +260,14 @@ template <typename TReturn, typename ...TArguments>
 class MockedCase : public ICase<TReturn, TArguments...> {
     private:
         std::unique_ptr<ICase<TReturn, TArguments...>> _previousCase;
-        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
+        std::shared_ptr<MockCaseMutableCallCount> _callCount;
         std::unique_ptr<IReturnValue<TReturn>> _returnValue;
         std::tuple<TArguments...> _arguments;
 
     public:
         MockedCase(
             std::unique_ptr<ICase<TReturn, TArguments...>> previousCase,
-            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount,
+            std::shared_ptr<MockCaseMutableCallCount> callCount,
             std::unique_ptr<IReturnValue<TReturn>> returnValue,
             std::tuple<TArguments...> arguments)
             : _previousCase(std::move(previousCase))
@@ -284,7 +284,7 @@ class MockedCase : public ICase<TReturn, TArguments...> {
                 return _returnValue->getReturnValue();
             }
             else {
-                return Internal::Apply::apply(
+                return Apply::apply(
                     &ICase<TReturn, TArguments...>::call,
                     *_previousCase,
                     std::move(tupleArguments));
@@ -336,6 +336,10 @@ namespace IMock::Internal {
 typedef unsigned int VirtualOffset;
 
 typedef VirtualOffset VirtualTableSize;
+
+}
+
+namespace IMock::Internal {
 
 #define offset0(id) \
     virtual VirtualOffset offset ## id() {\
@@ -404,28 +408,39 @@ struct VirtualOffsetReference {
 #undef offset2
 #undef offset3
 
-template <typename TInterface, typename TReturn, typename ...TArguments>
-VirtualOffset getVirtualOffset(TReturn (TInterface::*method)(TArguments...)) {    
-    auto referenceMethod = 
-        reinterpret_cast<VirtualOffset (VirtualOffsetReference::*)()>(method);
+}
+
+namespace IMock::Internal {
+
+class VirtualOffsetContext {
+    public:
+        template <typename TInterface, typename TReturn, typename ...TArguments>
+        static VirtualOffset getVirtualOffset(
+            TReturn (TInterface::*method)(TArguments...)) {    
+            auto referenceMethod = reinterpret_cast<
+                VirtualOffset (VirtualOffsetReference::*)()>(method);
+            
+            static VirtualOffsetReference virtualOffsetReference;
+
+            return (virtualOffsetReference.*referenceMethod)();
+        }
+
+        template <typename TInterface>
+        static VirtualTableSize getVirtualTableSize() {
+            class DerivedInterface : public TInterface {
+                public:
+                    virtual void lastMethod() = 0;
+            };
+
+            VirtualOffset virtualTableSize = getVirtualOffset(
+                &DerivedInterface::lastMethod);
+
+            return virtualTableSize;
+        }
     
-    static VirtualOffsetReference virtualOffsetReference;
-
-    return (virtualOffsetReference.*referenceMethod)();
-}
-
-template <typename TInterface>
-VirtualTableSize getVirtualTableSize() {
-    class DerivedInterface : public TInterface {
-        public:
-            virtual void lastMethod() = 0;
-    };
-
-    VirtualOffset virtualTableSize = getVirtualOffset(
-        &DerivedInterface::lastMethod);
-
-    return virtualTableSize;
-}
+    private:
+        VirtualOffsetContext();
+};
 
 }
 
@@ -439,7 +454,8 @@ class VirtualTable {
 
     public:
         VirtualTable() 
-            : _virtualTableSize(Internal::getVirtualTableSize<TInterface>())
+            : _virtualTableSize(VirtualOffsetContext
+                ::getVirtualTableSize<TInterface>())
             , _virtualTable(
                 new void*[_virtualTableSize],
                 [](void** virtualTable) {
@@ -448,7 +464,7 @@ class VirtualTable {
             std::fill(
                 _virtualTable.get(),
                 _virtualTable.get() + _virtualTableSize,
-                reinterpret_cast<void*>(Internal::UnknownCall::onUnknownCall));
+                reinterpret_cast<void*>(UnknownCall::onUnknownCall));
         }
 
         void** get() const {
@@ -481,11 +497,8 @@ class InnerMock {
                 }
         };
 
-        std::map<MockCaseID, Internal::VirtualOffset> _virtualOffsets;
-        std::map<
-            Internal::VirtualOffset,
-            std::unique_ptr<Internal::ICaseNonGeneric>
-        > _cases;
+        std::map<MockCaseID, VirtualOffset> _virtualOffsets;
+        std::map<VirtualOffset, std::unique_ptr<ICaseNonGeneric>> _cases;
 
         VirtualTable<TInterface> _virtualTable;
 
@@ -506,10 +519,10 @@ class InnerMock {
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
             TReturn (TInterface::*method)(TArguments...),
-            std::unique_ptr<Internal::IReturnValue<TReturn>> returnValue,
+            std::unique_ptr<IReturnValue<TReturn>> returnValue,
             std::tuple<TArguments...> arguments) {
-            Internal::VirtualOffset virtualOffset =
-                Internal::getVirtualOffset(method);
+            VirtualOffset virtualOffset =
+                VirtualOffsetContext::getVirtualOffset(method);
 
             bool virtualOffsetsNoID = _virtualOffsets.count(id) == 0;
             if(virtualOffsetsNoID) {
@@ -518,19 +531,19 @@ class InnerMock {
 
             bool methodHasNoMocks = _cases.count(virtualOffset) == 0;
             if(methodHasNoMocks) {
-                _cases[virtualOffset] = Internal::make_unique<
-                    Internal::UnmockedCase<TReturn, TArguments...>>();
+                _cases[virtualOffset] = make_unique<
+                    UnmockedCase<TReturn, TArguments...>>();
                 _virtualTable.get()[virtualOffset] =
                     reinterpret_cast<void*>(onCall<id, TReturn, TArguments...>);
             }
-            std::unique_ptr<Internal::ICase<TReturn, TArguments...>>*
-                previousCase = reinterpret_cast<std::unique_ptr<Internal::ICase<
-                    TReturn, TArguments...>>*>(&_cases.at(virtualOffset));
+            std::unique_ptr<ICase<TReturn, TArguments...>>* previousCase =
+                reinterpret_cast<std::unique_ptr<ICase<TReturn,
+                TArguments...>>*>(&_cases.at(virtualOffset));
             
-            std::shared_ptr<Internal::MockCaseMutableCallCount> callCountPointer 
-                = std::make_shared<Internal::MockCaseMutableCallCount>();
+            std::shared_ptr<MockCaseMutableCallCount> callCountPointer 
+                = std::make_shared<MockCaseMutableCallCount>();
             
-            _cases[virtualOffset] = Internal::make_unique<Internal::MockedCase<
+            _cases[virtualOffset] = make_unique<MockedCase<
                 TReturn, TArguments...>>(
                     std::move(*previousCase),
                     callCountPointer,
@@ -546,11 +559,10 @@ class InnerMock {
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         static TReturn onCall(MockFake* mockFake, TArguments... arguments) {
             InnerMock* mock = mockFake->getMock();
-            Internal::VirtualOffset virtualOffset = mock->_virtualOffsets[id];
-            Internal::ICaseNonGeneric* caseNonGeneric =
-                mock->_cases[virtualOffset].get();
-            Internal::ICase<TReturn, TArguments...>* _case =
-                reinterpret_cast<Internal::ICase<TReturn, TArguments...>*>(
+            VirtualOffset virtualOffset = mock->_virtualOffsets[id];
+            ICaseNonGeneric* caseNonGeneric = mock->_cases[virtualOffset].get();
+            ICase<TReturn, TArguments...>* _case =
+                reinterpret_cast<ICase<TReturn, TArguments...>*>(
                     caseNonGeneric);
             return _case->call(std::move(arguments)...);
         }

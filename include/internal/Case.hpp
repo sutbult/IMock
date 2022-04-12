@@ -31,14 +31,14 @@ template <typename TReturn, typename ...TArguments>
 class MockedCase : public ICase<TReturn, TArguments...> {
     private:
         std::unique_ptr<ICase<TReturn, TArguments...>> _previousCase;
-        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
+        std::shared_ptr<MockCaseMutableCallCount> _callCount;
         std::unique_ptr<IReturnValue<TReturn>> _returnValue;
         std::tuple<TArguments...> _arguments;
 
     public:
         MockedCase(
             std::unique_ptr<ICase<TReturn, TArguments...>> previousCase,
-            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount,
+            std::shared_ptr<MockCaseMutableCallCount> callCount,
             std::unique_ptr<IReturnValue<TReturn>> returnValue,
             std::tuple<TArguments...> arguments)
             : _previousCase(std::move(previousCase))
@@ -55,7 +55,7 @@ class MockedCase : public ICase<TReturn, TArguments...> {
                 return _returnValue->getReturnValue();
             }
             else {
-                return Internal::Apply::apply(
+                return Apply::apply(
                     &ICase<TReturn, TArguments...>::call,
                     *_previousCase,
                     std::move(tupleArguments));

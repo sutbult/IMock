@@ -5,6 +5,7 @@
 
 #include <internal/UnknownCall.hpp>
 #include <internal/VirtualOffset.hpp>
+#include <internal/VirtualOffsetContext.hpp>
 
 namespace IMock::Internal {
 
@@ -16,7 +17,8 @@ class VirtualTable {
 
     public:
         VirtualTable() 
-            : _virtualTableSize(Internal::getVirtualTableSize<TInterface>())
+            : _virtualTableSize(VirtualOffsetContext
+                ::getVirtualTableSize<TInterface>())
             , _virtualTable(
                 new void*[_virtualTableSize],
                 [](void** virtualTable) {
@@ -25,7 +27,7 @@ class VirtualTable {
             std::fill(
                 _virtualTable.get(),
                 _virtualTable.get() + _virtualTableSize,
-                reinterpret_cast<void*>(Internal::UnknownCall::onUnknownCall));
+                reinterpret_cast<void*>(UnknownCall::onUnknownCall));
         }
 
         void** get() const {
