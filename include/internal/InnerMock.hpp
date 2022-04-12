@@ -6,8 +6,7 @@
 #include <MockCaseID.hpp>
 #include <internal/Case.hpp>
 #include <internal/make_unique.hpp>
-#include <internal/UnknownCall.hpp>
-#include <internal/VirtualOffset.hpp>
+#include <internal/VirtualTable.hpp>
 
 namespace IMock::Internal {
 
@@ -38,24 +37,13 @@ class InnerMock {
             std::unique_ptr<Internal::ICaseNonGeneric>
         > _cases;
 
-        Internal::VirtualTableSize _virtualTableSize;
-        std::unique_ptr<void*, std::function<void(void**)>> _virtualTable;
+        VirtualTable<TInterface> _virtualTable;
 
         MockFake _mockFake;
 
     public:
-        InnerMock() 
-            : _virtualTableSize(Internal::getVirtualTableSize<TInterface>())
-            , _virtualTable(
-                new void*[_virtualTableSize],
-                [](void** virtualTable) {
-                    delete[] virtualTable;
-                })
-            , _mockFake(_virtualTable.get(), this) {
-            std::fill(
-                _virtualTable.get(),
-                _virtualTable.get() + _virtualTableSize,
-                reinterpret_cast<void*>(Internal::UnknownCall::onUnknownCall));
+        InnerMock()
+            : _mockFake(_virtualTable.get(), this) {
         }
 
         virtual ~InnerMock() {
