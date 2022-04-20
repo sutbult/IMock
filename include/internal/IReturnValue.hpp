@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 namespace IMock::Internal {
 
 template <typename TReturn>
@@ -24,7 +26,7 @@ class NonVoidReturnValue : public IReturnValue<TReturn> {
 
     public:
         NonVoidReturnValue(TReturn returnValue)
-            : _returnValue(returnValue) {
+            : _returnValue(std::move(returnValue)) {
         }
         
         virtual TReturn getReturnValue() override {

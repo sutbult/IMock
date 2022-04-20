@@ -1,6 +1,13 @@
 #pragma once
 
+#include <tuple>
+#include <utility>
+
+#include <internal/Apply.hpp>
+#include <internal/CaseMatchFactory.hpp>
 #include <internal/InnerMock.hpp>
+#include <internal/MockWithArguments.hpp>
+#include <internal/make_unique.hpp>
 #include <MockCaseCallCount.hpp>
 #include <MockCaseID.hpp>
 
@@ -30,26 +37,40 @@ class MockWithArguments {
         MockCaseCallCount returns(
             typename std::enable_if<!std::is_void<R>::value, TReturn>::type
                 returnValue) {
-            std::unique_ptr<Internal::IReturnValue<TReturn>> wrappedReturnValue
-                = Internal::make_unique<Internal::NonVoidReturnValue<TReturn>>(
-                returnValue);
+            std::tuple<TReturn> wrappedReturnValue = (returnValue);
 
-            return _mock->template addCase<id, TReturn, TArguments...>(
-                _method,
-                std::move(wrappedReturnValue),
-                std::move(_arguments));
+            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake
+                = [wrappedReturnValue] (TArguments... arguments) {
+                    return Internal::CaseMatchFactory::match<TReturn>(
+                        std::get<0>(wrappedReturnValue));
+                };
+
+            return fakeGeneral(fake);
         }
 
         template<typename R = TReturn,
             typename std::enable_if<std::is_void<R>::value, R>::type* = nullptr>
         MockCaseCallCount returns() {
-            std::unique_ptr<Internal::IReturnValue<TReturn>> wrappedReturnValue
-                = Internal::make_unique<Internal::VoidReturnValue>();
+            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake
+                = [] (TArguments... arguments) {
+                    return Internal::CaseMatchFactory::matchVoid();
+                };
+
+            return fakeGeneral(fake);
+        }
+
+    private:
+        MockCaseCallCount fakeGeneral(
+            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake) {
+            std::unique_ptr<Internal::ICase<TReturn, TArguments...>> mockCase
+                = Internal::make_unique<
+                Internal::MockWithArgumentsCase<TReturn, TArguments...>>(
+                std::move(_arguments),
+                fake);
 
             return _mock->template addCase<id, TReturn, TArguments...>(
                 _method,
-                std::move(wrappedReturnValue),
-                std::move(_arguments));
+                std::move(mockCase));
         }
 };
 

@@ -4,8 +4,9 @@
 #include <map>
 
 #include <MockCaseID.hpp>
-#include <internal/Case.hpp>
+#include <internal/CaseMatch.hpp>
 #include <internal/make_unique.hpp>
+#include <internal/MockMethod.hpp>
 #include <internal/VirtualTable.hpp>
 
 namespace IMock::Internal {
@@ -32,7 +33,8 @@ class InnerMock {
         };
 
         std::map<MockCaseID, VirtualOffset> _virtualOffsets;
-        std::map<VirtualOffset, std::unique_ptr<ICaseNonGeneric>> _cases;
+        std::map<VirtualOffset, std::unique_ptr<IMockMethodNonGeneric>>
+            _mockMethods;
 
         VirtualTable<TInterface> _virtualTable;
 
@@ -53,8 +55,9 @@ class InnerMock {
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
             TReturn (TInterface::*method)(TArguments...),
-            std::unique_ptr<IReturnValue<TReturn>> returnValue,
-            std::tuple<TArguments...> arguments) {
+            std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
+            // TODO: Move the logic to a method that doesn't include id as a
+            // template parameter.
             VirtualOffset virtualOffset =
                 VirtualOffsetContext::getVirtualOffset(method);
 
@@ -63,42 +66,44 @@ class InnerMock {
                 _virtualOffsets[id] = virtualOffset;
             }
 
-            bool methodHasNoMocks = _cases.count(virtualOffset) == 0;
+            bool methodHasNoMocks = _mockMethods.count(virtualOffset) == 0;
             if(methodHasNoMocks) {
-                _cases[virtualOffset] = make_unique<
-                    UnmockedCase<TReturn, TArguments...>>();
+                _mockMethods[virtualOffset] = make_unique<
+                    MockMethod<TReturn, TArguments...>>();
+
                 _virtualTable.get()[virtualOffset] =
                     reinterpret_cast<void*>(onCall<id, TReturn, TArguments...>);
             }
-            std::unique_ptr<ICase<TReturn, TArguments...>>* previousCase =
-                reinterpret_cast<std::unique_ptr<ICase<TReturn,
-                TArguments...>>*>(&_cases.at(virtualOffset));
             
-            std::shared_ptr<MockCaseMutableCallCount> callCountPointer 
-                = std::make_shared<MockCaseMutableCallCount>();
-            
-            _cases[virtualOffset] = make_unique<MockedCase<
-                TReturn, TArguments...>>(
-                    std::move(*previousCase),
-                    callCountPointer,
-                    std::move(returnValue),
-                    std::move(arguments));
-            
-            MockCaseCallCount callCount(callCountPointer);
-
-            return callCount;
+            return getMockMethod<TReturn, TArguments...>(virtualOffset)
+                .addCase(std::move(mockCase));
         }
 
     private:
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         static TReturn onCall(MockFake* mockFake, TArguments... arguments) {
-            InnerMock* mock = mockFake->getMock();
-            VirtualOffset virtualOffset = mock->_virtualOffsets[id];
-            ICaseNonGeneric* caseNonGeneric = mock->_cases[virtualOffset].get();
-            ICase<TReturn, TArguments...>* _case =
-                reinterpret_cast<ICase<TReturn, TArguments...>*>(
-                    caseNonGeneric);
-            return _case->call(std::move(arguments)...);
+            // TODO: Move the logic to a method that doesn't include id as a
+            // template parameter.
+            InnerMock& mock = *mockFake->getMock();
+
+            VirtualOffset virtualOffset = mock._virtualOffsets[id];
+
+            return mock
+                .getMockMethod<TReturn, TArguments...>(virtualOffset)
+                .onCall(std::move(arguments)...);
+        }
+
+        template <typename TReturn, typename ...TArguments>
+        MockMethod<TReturn, TArguments...>& getMockMethod(
+            VirtualOffset virtualOffset) {
+            IMockMethodNonGeneric* mockMethodNonGeneric
+                = _mockMethods[virtualOffset].get();
+
+            MockMethod<TReturn, TArguments...>* mockMethod
+                = reinterpret_cast<MockMethod<TReturn, TArguments...>*>(
+                    mockMethodNonGeneric);
+
+            return *mockMethod;
         }
 };
 
