@@ -4,6 +4,8 @@
 #define mockType(mock) \
     std::remove_reference<decltype((mock).get())>::type
 
+// TODO: Remove MockWithID and make withMethod accept a MockCaseID instead.
+
 /// Call this with a Mock and a method on the mocked interface to get a
 /// MockWithMethod to use to add a mock case.
 #define when(mock, method) \

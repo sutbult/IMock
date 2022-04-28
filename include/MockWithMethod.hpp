@@ -43,6 +43,8 @@ class MockWithMethod {
                 _method,
                 std::tuple<TArguments...>(std::move(arguments)...));
         }
+
+        // TODO: Add a method for adding a mock case with a fake.
 };
 
 }

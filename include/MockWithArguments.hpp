@@ -94,6 +94,8 @@ class MockWithArguments {
             return fakeGeneral(fake);
         }
 
+        // TODO: Add a method for adding a mock case with a fake.
+
     private:
         /// Adds a mock case making calls to the associated method be forwarded
         /// to fake when called with the associated arguments.

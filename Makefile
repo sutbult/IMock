@@ -22,6 +22,7 @@ build-lcov-filter: init
 		test/script/lcovFilter.cpp \
 		-o build/lcovFilter
 
+# TODO: Add timing of build/IMockTest.
 # Builds the test executable and runs the automatic tests.
 test: build-lcov-filter build
 	find . -name "*.gcda" -type f -delete

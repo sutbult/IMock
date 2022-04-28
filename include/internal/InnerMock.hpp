@@ -93,6 +93,10 @@ class InnerMock {
             // TODO: Move the logic to a method that doesn't include id as a
             // template parameter.
 
+            // TODO: The virtual table offset can potentially be retrieved from
+            // _virtualOffsets without having to call getVirtualOffset each
+            // time.
+
             // Get the virtual table offset of the method.
             VirtualOffset virtualOffset =
                 VirtualOffsetContext::getVirtualOffset(method);
