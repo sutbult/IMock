@@ -792,6 +792,10 @@ class InnerMock {
             // TODO: Move the logic to a method that doesn't include id as a
             // template parameter.
 
+            // TODO: The virtual table offset can potentially be retrieved from
+            // _virtualOffsets without having to call getVirtualOffset each
+            // time.
+
             // Get the virtual table offset of the method.
             VirtualOffset virtualOffset =
                 VirtualOffsetContext::getVirtualOffset(method);
@@ -1098,6 +1102,8 @@ class MockWithArguments {
             return fakeGeneral(fake);
         }
 
+        // TODO: Add a method for adding a mock case with a fake.
+
     private:
         /// Adds a mock case making calls to the associated method be forwarded
         /// to fake when called with the associated arguments.
@@ -1162,6 +1168,8 @@ class MockWithMethod {
                 _method,
                 std::tuple<TArguments...>(std::move(arguments)...));
         }
+
+        // TODO: Add a method for adding a mock case with a fake.
 };
 
 }
@@ -1247,6 +1255,8 @@ class Mock {
 /// Gets the interface type the provided Mock mocks.
 #define mockType(mock) \
     std::remove_reference<decltype((mock).get())>::type
+
+// TODO: Remove MockWithID and make withMethod accept a MockCaseID instead.
 
 /// Call this with a Mock and a method on the mocked interface to get a
 /// MockWithMethod to use to add a mock case.
