@@ -4,11 +4,14 @@
 
 namespace IMock::Internal {
 
+// Define a macro creating a virtual method returning its own virtual table
+// offset.
 #define offset0(id) \
     virtual VirtualOffset offset ## id() {\
         return id;\
     }\
 
+// Calls offset0 16 times, creating 16 methods.
 #define offset1(id) \
     offset0(id ## 0) \
     offset0(id ## 1) \
@@ -27,6 +30,7 @@ namespace IMock::Internal {
     offset0(id ## E) \
     offset0(id ## F) \
 
+// Calls offset1 16 times, creating 256 methods.
 #define offset2(id) \
     offset1(id ## 0) \
     offset1(id ## 1) \
@@ -45,6 +49,7 @@ namespace IMock::Internal {
     offset1(id ## E) \
     offset1(id ## F) \
 
+// Calls offset2 16 times, creating 4096 methods.
 #define offset3(id) \
     offset2(id ## 0) \
     offset2(id ## 1) \
@@ -63,10 +68,14 @@ namespace IMock::Internal {
     offset2(id ## E) \
     offset2(id ## F) \
 
+/// A reference struct used by VirtualOffsetContext to calculate virtual table
+/// offsets and sizes.
 struct VirtualOffsetReference {
+    // Call offset3 to create 4096 offset methods.
     offset3(0x)
 };
 
+// Undefine the used macros.
 #undef offset1
 #undef offset2
 #undef offset3

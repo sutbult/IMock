@@ -85,7 +85,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 mock.get().add(1, 2),
                 IMock::Exception::UnmockedCallException,
                 Catch::Message("A call was made to a method that has been "
-                    "mocked but the arguments does not match the mocked "
+                    "mocked but the arguments does not match any mocked "
                     "arguments."));
         }
 
@@ -463,7 +463,7 @@ TEST_CASE("can mock an interface without any return value",
                 mock.get().setInt(2),
                 IMock::Exception::UnmockedCallException,
                 Catch::Message("A call was made to a method that has been "
-                    "mocked but the arguments does not match the mocked "
+                    "mocked but the arguments does not match any mocked "
                     "arguments."));
         }
 
@@ -521,7 +521,7 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
             std::unique_ptr<int> _value;
 
         public:
-            /// Creates a NoCopy with a given value.
+            /// Creates a NoCopy with a provided value.
             ///
             /// @param value The value to held.
             NoCopy(int value)
@@ -594,7 +594,7 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
                 mock.get().setInt(NoCopy(2)),
                 IMock::Exception::UnmockedCallException,
                 Catch::Message("A call was made to a method that has been "
-                    "mocked but the arguments does not match the mocked "
+                    "mocked but the arguments does not match any mocked "
                     "arguments."));
         }
 
