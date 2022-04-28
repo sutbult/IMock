@@ -389,6 +389,10 @@ class MockMethod : public IMockMethodNonGeneric {
                 /// the mock case has been called.
                 std::shared_ptr<MockCaseMutableCallCount> _callCount;
 
+                // TODO: This field causes a stack overflow when benchmarking
+                // since deletion is done recursively. Make MockMethod delete
+                // InnerMockCases iteratively instead.
+
                 /// The next mock case.
                 std::unique_ptr<InnerMockCase> _next;
 
