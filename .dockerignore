@@ -12,3 +12,6 @@ coverage
 
 # Outputted test coverage.
 lcov.info
+
+# Contans the generated single header.
+singleHeader
