@@ -24,6 +24,10 @@ class MockWithArguments {
         /// The method to add a mock case to.
         TReturn (TInterface::*_method)(TArguments...);
 
+        // TODO: Add a check making it so fakeGeneral only can be called once
+        // since the value of this field is copied and calling fakeGeneral could
+        // cause memory problems.
+
         /// The arguments to match calls with.
         std::tuple<TArguments...> _arguments;
 
