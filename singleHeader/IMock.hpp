@@ -389,10 +389,6 @@ class MockMethod : public IMockMethodNonGeneric {
                 /// the mock case has been called.
                 std::shared_ptr<MockCaseMutableCallCount> _callCount;
 
-                // TODO: This field causes a stack overflow when benchmarking
-                // since deletion is done recursively. Make MockMethod delete
-                // InnerMockCases iteratively instead.
-
                 /// The next mock case.
                 std::unique_ptr<InnerMockCase> _next;
 
@@ -419,6 +415,26 @@ class MockMethod : public IMockMethodNonGeneric {
         /// Creates a MockMethod without any mock cases.
         MockMethod()
             : _topMockCase(std::unique_ptr<InnerMockCase>(nullptr)) {
+        }
+
+        /// Destructs the MockMethod by deleting all InnerMockCase instances
+        /// iteratively to not cause any stack overflows.
+        virtual ~MockMethod() {
+            // Declare a pointer for mock cases and initialize it with the top
+            // mock case while releasing its unique_ptr.
+            InnerMockCase* mockCase = _topMockCase.release();
+
+            // Iterate while mock cases exist.
+            while(mockCase != nullptr) {
+                // Get the next mock case while releasing its unique_ptr.
+                InnerMockCase* nextMockCase = mockCase->_next.release();
+
+                // Delete the mock case.
+                delete mockCase;
+
+                // Assign the next mock case to mockCase to continue with it.
+                mockCase = nextMockCase;
+            }
         }
 
         /// Adds a new mock case.

@@ -713,10 +713,9 @@ TEST_CASE("benchmark", "[.][benchmark]") {
     benchmarkMockCalls(8192)
     benchmarkMockCalls(16384)
     benchmarkMockCalls(32768)
-
-    // TODO: These calls causes stack overflow on my computer.
-    // Refactor the case handling so the recursion is converted to regular
-    // iteration. Then, include these cases.
-    //benchmarkMockCalls(65536)
-    //benchmarkMockCalls(131072)
+    benchmarkMockCalls(65536)
+    benchmarkMockCalls(131072)
+    benchmarkMockCalls(262144)
+    benchmarkMockCalls(524288)
+    benchmarkMockCalls(1048576)
 }
