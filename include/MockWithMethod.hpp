@@ -12,7 +12,7 @@ template <typename TInterface, MockCaseID id, typename TReturn,
 class MockWithMethod {
     private:
         /// The InnerMock to add a mock case to.
-        Internal::InnerMock<TInterface>* _mock;
+        Internal::InnerMock<TInterface>& _mock;
 
         /// The method to add a mock case to.
         TReturn (TInterface::*_method)(TArguments...);
@@ -23,9 +23,9 @@ class MockWithMethod {
         /// @param mock The InnerMock to add a mock case to.
         /// @param method The method to add a mock case to.
         MockWithMethod(
-            Internal::InnerMock<TInterface>* mock,
+            Internal::InnerMock<TInterface>& mock,
             TReturn (TInterface::*method)(TArguments...))
-            : _mock(std::move(mock))
+            : _mock(mock)
             , _method(std::move(method)) {
         }
 

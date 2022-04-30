@@ -11,14 +11,14 @@ template <typename TInterface, MockCaseID id>
 class MockWithID {
     private:
         /// The InnerMock to add a mock case to.
-        Internal::InnerMock<TInterface>* _mock;
+        Internal::InnerMock<TInterface>& _mock;
 
     public:
         /// Creates a MockWithID.
         ///
         /// @param mock The InnerMock to add a mock case to.
-        MockWithID(Internal::InnerMock<TInterface>* mock)
-            : _mock(std::move(mock)) {
+        MockWithID(Internal::InnerMock<TInterface>& mock)
+            : _mock(mock) {
         }
 
         /// Creates a MockWithMethod used to add a mock case to the provided

@@ -37,7 +37,7 @@ class Mock {
         template <MockCaseID id>
         MockWithID<TInterface, id> withCounter() {
             // Create an return a MockWithID with _innerMock.
-            return MockWithID<TInterface, id>(&_innerMock);
+            return MockWithID<TInterface, id>(_innerMock);
         }
 };
 
