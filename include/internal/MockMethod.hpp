@@ -54,7 +54,7 @@ class MockMethod : public IMockMethodNonGeneric {
 
         /// Destructs the MockMethod by deleting all InnerMockCase instances
         /// iteratively to not cause any stack overflows.
-        virtual ~MockMethod() {
+        ~MockMethod() {
             // Declare a pointer for mock cases and initialize it with the top
             // mock case while releasing its unique_ptr.
             InnerMockCase* mockCase = _topMockCase.release();

@@ -69,10 +69,6 @@ class InnerMock {
             : _mockFake(_virtualTable.get(), this) {
         }
 
-        /// Virtual destructor of InnerMock.
-        virtual ~InnerMock() {
-        }
-
         /// Gets a reference to an object used in place of an instance of the
         /// interface.
         TInterface& get() {

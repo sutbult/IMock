@@ -23,10 +23,6 @@ class Mock {
         Internal::InnerMock<TInterface> _innerMock;
 
     public:
-        /// Virtual descructor for Mock.
-        virtual ~Mock() {
-        }
-
         /// Gets an instance of the interface where the virtual methods have
         /// been mocked.
         TInterface& get() {

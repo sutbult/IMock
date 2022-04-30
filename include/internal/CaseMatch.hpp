@@ -28,10 +28,6 @@ class CaseMatch {
             : _returnValue(std::move(other._returnValue)) {
         }
 
-        /// Virtual deconstructor for CaseMatch.
-        virtual ~CaseMatch() {
-        }
-
         /// Indicates if the call resulted in a match.
         ///
         /// @return True if the call resulted in a match and false otherwise.

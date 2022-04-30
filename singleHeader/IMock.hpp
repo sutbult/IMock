@@ -85,10 +85,6 @@ class CaseMatch {
             : _returnValue(std::move(other._returnValue)) {
         }
 
-        /// Virtual deconstructor for CaseMatch.
-        virtual ~CaseMatch() {
-        }
-
         /// Indicates if the call resulted in a match.
         ///
         /// @return True if the call resulted in a match and false otherwise.
@@ -419,7 +415,7 @@ class MockMethod : public IMockMethodNonGeneric {
 
         /// Destructs the MockMethod by deleting all InnerMockCase instances
         /// iteratively to not cause any stack overflows.
-        virtual ~MockMethod() {
+        ~MockMethod() {
             // Declare a pointer for mock cases and initialize it with the top
             // mock case while releasing its unique_ptr.
             InnerMockCase* mockCase = _topMockCase.release();
@@ -786,10 +782,6 @@ class InnerMock {
         /// Creates an InnerMock.
         InnerMock()
             : _mockFake(_virtualTable.get(), this) {
-        }
-
-        /// Virtual destructor of InnerMock.
-        virtual ~InnerMock() {
         }
 
         /// Gets a reference to an object used in place of an instance of the
@@ -1248,10 +1240,6 @@ class Mock {
         Internal::InnerMock<TInterface> _innerMock;
 
     public:
-        /// Virtual descructor for Mock.
-        virtual ~Mock() {
-        }
-
         /// Gets an instance of the interface where the virtual methods have
         /// been mocked.
         TInterface& get() {
