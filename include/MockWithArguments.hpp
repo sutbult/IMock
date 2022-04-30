@@ -6,8 +6,8 @@
 #include <internal/Apply.hpp>
 #include <internal/CaseMatchFactory.hpp>
 #include <internal/InnerMock.hpp>
-#include <internal/MockWithArguments.hpp>
 #include <internal/make_unique.hpp>
+#include <internal/MockWithArgumentsCase.hpp>
 #include <MockCaseCallCount.hpp>
 #include <MockCaseID.hpp>
 
