@@ -738,26 +738,27 @@ class InnerMock {
                 /// The raw virtual table of the mocked interface.
                 void** _virtualTable;
 
-                /// A pointer to the InnerMock that did the mocking.
-                InnerMock* _mock;
+                /// A reference to the InnerMock that did the mocking.
+                InnerMock& _mock;
 
             public:
                 /// Creates a MockFake.
                 ///
                 /// @param virtualTable The raw virtual table of the mocked
                 /// interface.
-                /// @param mock A pointer to the InnerMock that did the mocking.
+                /// @param mock A reference to the InnerMock that did the
+                /// mocking.
                 MockFake(
                     void** virtualTable,
-                    InnerMock* mock)
+                    InnerMock& mock)
                     : _virtualTable(std::move(virtualTable))
-                    , _mock(std::move(mock)) {
+                    , _mock(mock) {
                 }
 
                 /// Gets the contained InnerMock.
                 ///
                 /// @return The contained InnerMock.
-                InnerMock* getMock() {
+                InnerMock& getMock() {
                     // Return the contained InnerMock.
                     return _mock;
                 }
@@ -781,14 +782,14 @@ class InnerMock {
     public:
         /// Creates an InnerMock.
         InnerMock()
-            : _mockFake(_virtualTable.get(), this) {
+            : _mockFake(_virtualTable.get(), *this) {
         }
 
         /// Gets a reference to an object used in place of an instance of the
         /// interface.
         TInterface& get() {
             // Cast the MockFake to a TInterface and return a reference to it.
-            return *reinterpret_cast<TInterface*>(&_mockFake);
+            return reinterpret_cast<TInterface&>(_mockFake);
         }
 
         /// Adds a mock case to the provided method.
@@ -848,7 +849,7 @@ class InnerMock {
             // template parameter.
 
             // Get the InnerMock.
-            InnerMock& mock = *mockFake->getMock();
+            InnerMock& mock = mockFake->getMock();
 
             // Get the virtual table offset for the MockCaseID.
             VirtualOffset virtualOffset = mock._virtualOffsets[id];
@@ -869,16 +870,16 @@ class InnerMock {
         MockMethod<TReturn, TArguments...>& getMockMethod(
             VirtualOffset virtualOffset) {
             // Get the MockMethod from _mockMethods.
-            IMockMethodNonGeneric* mockMethodNonGeneric
-                = _mockMethods[virtualOffset].get();
+            IMockMethodNonGeneric& mockMethodNonGeneric
+                = *_mockMethods[virtualOffset].get();
 
             // Cast mockMethodNonGeneric to its correct type.
-            MockMethod<TReturn, TArguments...>* mockMethod
-                = reinterpret_cast<MockMethod<TReturn, TArguments...>*>(
+            MockMethod<TReturn, TArguments...>& mockMethod
+                = reinterpret_cast<MockMethod<TReturn, TArguments...>&>(
                     mockMethodNonGeneric);
 
             // Return the MockMethod.
-            return *mockMethod;
+            return mockMethod;
         }
 };
 
