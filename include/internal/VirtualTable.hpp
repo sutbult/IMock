@@ -4,8 +4,8 @@
 #include <memory>
 
 #include <internal/UnknownCall.hpp>
-#include <internal/VirtualOffset.hpp>
-#include <internal/VirtualOffsetContext.hpp>
+#include <internal/VirtualTableOffset.hpp>
+#include <internal/VirtualTableOffsetContext.hpp>
 
 namespace IMock::Internal {
 
@@ -25,7 +25,7 @@ class VirtualTable {
         /// All methods will initially point to a method throwing an exception
         /// explaining that the method in question has not been mocked.
         VirtualTable()
-            : _virtualTableSize(VirtualOffsetContext
+            : _virtualTableSize(VirtualTableOffsetContext
                 ::getVirtualTableSize<TInterface>())
             , _virtualTable(
                 new void*[_virtualTableSize],

@@ -1,13 +1,13 @@
 #pragma once
 
-#include <internal/VirtualOffset.hpp>
+#include <internal/VirtualTableOffset.hpp>
 
 namespace IMock::Internal {
 
 // Define a macro creating a virtual method returning its own virtual table
 // offset.
 #define offset0(id) \
-    virtual VirtualOffset offset ## id() {\
+    virtual VirtualTableOffset offset ## id() {\
         return id;\
     }\
 
@@ -68,9 +68,9 @@ namespace IMock::Internal {
     offset2(id ## E) \
     offset2(id ## F) \
 
-/// A reference struct used by VirtualOffsetContext to calculate virtual table
-/// offsets and sizes.
-struct VirtualOffsetReference {
+/// A reference struct used by VirtualTableOffsetContext to calculate virtual
+/// table offsets and sizes.
+struct VirtualTableOffsetReference {
     // Call offset3 to create 4096 offset methods.
     offset3(0x)
 };

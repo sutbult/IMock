@@ -49,13 +49,13 @@ class InnerMock {
                 }
         };
 
-        /// Maps the MockCaseID's of all mock cases to the virtual offsets of
-        /// their mocked methods.
-        std::map<MockCaseID, VirtualOffset> _virtualOffsets;
+        /// Maps the MockCaseID's of all mock cases to the virtual table offsets
+        /// of their mocked methods.
+        std::map<MockCaseID, VirtualTableOffset> _virtualTableOffsets;
 
-        /// Maps the virtual offsets of the mocked methods to MockMethod
+        /// Maps the virtual table offsets of the mocked methods to MockMethod
         /// instances dealing with calls to respective method.
-        std::map<VirtualOffset, std::unique_ptr<IMockMethodNonGeneric>>
+        std::map<VirtualTableOffset, std::unique_ptr<IMockMethodNonGeneric>>
             _mockMethods;
 
         /// A VirtualTable to add mocked methods to.
@@ -91,36 +91,36 @@ class InnerMock {
             // template parameter.
 
             // TODO: The virtual table offset can potentially be retrieved from
-            // _virtualOffsets without having to call getVirtualOffset each
-            // time.
+            // _virtualTableOffsets without having to call getVirtualTableOffset
+            // each time.
 
             // Get the virtual table offset of the method.
-            VirtualOffset virtualOffset =
-                VirtualOffsetContext::getVirtualOffset(method);
+            VirtualTableOffset virtualTableOffset
+                = VirtualTableOffsetContext::getVirtualTableOffset(method);
 
             // Check if a virtual table offset has been stired in
-            // _virtualOffsets for the provided MockCaseID.
-            bool virtualOffsetsNoID = _virtualOffsets.count(id) == 0;
-            if(virtualOffsetsNoID) {
+            // _virtualTableOffsets for the provided MockCaseID.
+            bool virtualTableOffsetsNoID = _virtualTableOffsets.count(id) == 0;
+            if(virtualTableOffsetsNoID) {
                 // Store the virtual table offset.
-                _virtualOffsets[id] = virtualOffset;
+                _virtualTableOffsets[id] = virtualTableOffset;
             }
 
             // Check if the method has any existing mock cases.
-            bool methodHasNoMocks = _mockMethods.count(virtualOffset) == 0;
+            bool methodHasNoMocks = _mockMethods.count(virtualTableOffset) == 0;
             if(methodHasNoMocks) {
                 // Create and store a MockMethod if the method has no existing
                 // mock cases.
-                _mockMethods[virtualOffset] = make_unique<
+                _mockMethods[virtualTableOffset] = make_unique<
                     MockMethod<TReturn, TArguments...>>();
 
                 // Store a pointer to onCall in the virtual table.
-                _virtualTable.get()[virtualOffset] =
+                _virtualTable.get()[virtualTableOffset] =
                     reinterpret_cast<void*>(onCall<id, TReturn, TArguments...>);
             }
             
             // Get the MockMethod for the method and add a mock case to it.
-            return getMockMethod<TReturn, TArguments...>(virtualOffset)
+            return getMockMethod<TReturn, TArguments...>(virtualTableOffset)
                 .addCase(std::move(mockCase));
         }
 
@@ -137,26 +137,27 @@ class InnerMock {
             InnerMock& mock = mockFake->getMock();
 
             // Get the virtual table offset for the MockCaseID.
-            VirtualOffset virtualOffset = mock._virtualOffsets[id];
+            VirtualTableOffset virtualTableOffset
+                = mock._virtualTableOffsets[id];
 
             // Get the MockMethod for the called method and forward the call to
             // onCall.
             return mock
-                .getMockMethod<TReturn, TArguments...>(virtualOffset)
+                .getMockMethod<TReturn, TArguments...>(virtualTableOffset)
                 .onCall(std::move(arguments)...);
         }
 
         /// Gets the MockMethod for the method with the provided virtual table
         /// offset.
         ///
-        /// @param virtualOffset The method's virtual table offset.
+        /// @param virtualTableOffset The method's virtual table offset.
         /// @return The method's MockMethod.
         template <typename TReturn, typename ...TArguments>
         MockMethod<TReturn, TArguments...>& getMockMethod(
-            VirtualOffset virtualOffset) {
+            VirtualTableOffset virtualTableOffset) {
             // Get the MockMethod from _mockMethods.
             IMockMethodNonGeneric& mockMethodNonGeneric
-                = *_mockMethods[virtualOffset].get();
+                = *_mockMethods[virtualTableOffset].get();
 
             // Cast mockMethodNonGeneric to its correct type.
             MockMethod<TReturn, TArguments...>& mockMethod
