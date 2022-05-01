@@ -123,12 +123,28 @@ class InnerMock {
     private:
         /// Called when a call to a method in the interface is called.
         ///
+        /// @param mockFake The MockFake instance this call was made on.
         /// @param arguments The arguments the method was called with.
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         static TReturn onCall(MockFake* mockFake, TArguments... arguments) {
-            // TODO: Move the logic to a method that doesn't include id as a
-            // template parameter.
+            // Forward the call to onCallWithMockCaseID.
+            return onCallWithMockCaseID<TReturn, TArguments...>(
+                id,
+                mockFake,
+                std::move(arguments)...);
+        }
 
+        /// Called when a call to a method in the interface is called.
+        ///
+        /// @param id The MockCaseID of the onCall method that made the internal
+        /// call.
+        /// @param mockFake The MockFake instance this call was made on.
+        /// @param arguments The arguments the method was called with.
+        template <typename TReturn, typename ...TArguments>
+        static TReturn onCallWithMockCaseID(
+            MockCaseID id,
+            MockFake* mockFake,
+            TArguments... arguments) {
             // Get the InnerMock.
             InnerMock& mock = mockFake->getMock();
 
