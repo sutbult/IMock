@@ -813,21 +813,17 @@ class InnerMock {
             // TODO: Move the logic to a method that doesn't include id as a
             // template parameter.
 
-            // TODO: The virtual table offset can potentially be retrieved from
-            // _virtualTableOffsets without having to call getVirtualTableOffset
-            // each time.
-
-            // Get the virtual table offset of the method.
-            VirtualTableOffset virtualTableOffset
-                = VirtualTableOffsetContext::getVirtualTableOffset(method);
-
-            // Check if a virtual table offset has been stired in
+            // Check if a virtual table offset has been stored in
             // _virtualTableOffsets for the provided MockCaseID.
             bool virtualTableOffsetsNoID = _virtualTableOffsets.count(id) == 0;
             if(virtualTableOffsetsNoID) {
-                // Store the virtual table offset.
-                _virtualTableOffsets[id] = virtualTableOffset;
+                // Get the virtual table offset of the method and store it.
+                _virtualTableOffsets[id] = VirtualTableOffsetContext
+                    ::getVirtualTableOffset(method);
             }
+
+            // Get the virtual table offset of the provided MockCaseID.
+            VirtualTableOffset virtualTableOffset = _virtualTableOffsets[id];
 
             // Check if the method has any existing mock cases.
             bool methodHasNoMocks = _mockMethods.count(virtualTableOffset) == 0;
