@@ -885,6 +885,22 @@ class InnerMock {
 
 }
 
+namespace IMock::Exception {
+
+/// Thrown when a MockWithArguments is used twice, since the arguments are
+/// moved.
+class MockWithArgumentsUsedTwiceException : public MockException {
+    public:
+        /// Creates a MockWithArgumentsUsedTwiceException.
+        MockWithArgumentsUsedTwiceException()
+            : MockException("A MockWithArguments instance was reused."
+                " This is not possible since the arguments are moved when"
+                " adding a case.") {
+        }
+};
+
+}
+
 namespace IMock::Internal {
 
 /// Utility making it possible to call a callback using arguments contained in
@@ -1045,12 +1061,11 @@ class MockWithArguments {
         /// The method to add a mock case to.
         TReturn (TInterface::*_method)(TArguments...);
 
-        // TODO: Add a check making it so fakeGeneral only can be called once
-        // since the value of this field is copied and calling fakeGeneral could
-        // cause memory problems.
-
         /// The arguments to match calls with.
         std::tuple<TArguments...> _arguments;
+
+        /// Describes if the instance already has been used.
+        bool _used;
 
     public:
         /// Creates a MockWithArguments.
@@ -1064,7 +1079,8 @@ class MockWithArguments {
             std::tuple<TArguments...> arguments)
             : _mock(mock)
             , _method(std::move(method))
-            , _arguments(std::move(arguments)) {
+            , _arguments(std::move(arguments))
+            , _used(false) {
         }
 
         // The solution for dealing with void has been taken from:
@@ -1130,10 +1146,25 @@ class MockWithArguments {
         /// calls done to the added mock case.
         MockCaseCallCount fakeGeneral(
             std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake) {
+            // Check if the instance already has been used.
+            if(_used) {
+                // Throw a MockWithArgumentsUsedTwiceException since the
+                // instance cannot be used again as the arguments has been
+                // moved.
+                throw Exception::MockWithArgumentsUsedTwiceException();
+            }
+            else {
+                // Raise the _used flag to mark that the instance has been used.
+                _used = true;
+            }
+
             // Create a MockWithArgumentsCase.
             std::unique_ptr<Internal::ICase<TReturn, TArguments...>> mockCase
                 = Internal::make_unique<
                 Internal::MockWithArgumentsCase<TReturn, TArguments...>>(
+
+                // Move the arguments, which means the instance cannot be used
+                // again.
                 std::move(_arguments),
                 fake);
 

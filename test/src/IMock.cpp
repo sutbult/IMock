@@ -235,6 +235,23 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             }
         }
     }
+
+    SECTION("mock add twice with the same MockWithArguments instance") {
+        // Create a MockWithArguments instance.
+        auto mockWithArguments = when(mock, add).with(1, 1);
+
+        // Mock add.
+        mockWithArguments.returns(2);
+
+        // Mock add again and verify it throws a
+        // MockWithArgumentsUsedTwiceException.
+        REQUIRE_THROWS_MATCHES(
+            mockWithArguments.returns(3),
+            IMock::Exception::MockWithArgumentsUsedTwiceException,
+            Catch::Message("A MockWithArguments instance was reused."
+                " This is not possible since the arguments are moved when"
+                " adding a case."));
+    }
 }
 
 TEST_CASE("can mock an interface where every argument and return value is a "
