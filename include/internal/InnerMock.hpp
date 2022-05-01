@@ -87,9 +87,31 @@ class InnerMock {
         MockCaseCallCount addCase(
             TReturn (TInterface::*method)(TArguments...),
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
-            // TODO: Move the logic to a method that doesn't include id as a
-            // template parameter.
+            // Forward the call to addCaseWithOnCall.
+            return addCaseWithOnCall<TReturn, TArguments...>(
+                id,
+                onCall<id, TReturn, TArguments...>,
+                method,
+                std::move(mockCase));
+        }
 
+    private:
+        /// Adds a mock case to the provided method.
+        ///
+        /// @param id The MockCaseID of the addCase method that made the
+        /// internal call.
+        /// @param onCall The onCall method to insert into the virtual table if
+        /// required.
+        /// @param method The method to add a mock case to.
+        /// @param mockCase The mock case to add.
+        /// @return A MockCaseCallCount that can be queried about the number of
+        /// calls done to the added mock case.
+        template <typename TReturn, typename ...TArguments>
+        MockCaseCallCount addCaseWithOnCall(
+            MockCaseID id,
+            TReturn (*onCall)(MockFake*, TArguments...),
+            TReturn (TInterface::*method)(TArguments...),
+            std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Check if a virtual table offset has been stored in
             // _virtualTableOffsets for the provided MockCaseID.
             bool virtualTableOffsetsNoID = _virtualTableOffsets.count(id) == 0;
@@ -111,8 +133,8 @@ class InnerMock {
                     MockMethod<TReturn, TArguments...>>();
 
                 // Store a pointer to onCall in the virtual table.
-                _virtualTable.get()[virtualTableOffset] =
-                    reinterpret_cast<void*>(onCall<id, TReturn, TArguments...>);
+                _virtualTable.get()[virtualTableOffset]
+                    = reinterpret_cast<void*>(onCall);
             }
             
             // Get the MockMethod for the method and add a mock case to it.
@@ -120,7 +142,6 @@ class InnerMock {
                 .addCase(std::move(mockCase));
         }
 
-    private:
         /// Called when a call to a method in the interface is called.
         ///
         /// @param mockFake The MockFake instance this call was made on.
