@@ -17,16 +17,23 @@ class MockWithMethod {
         /// The method to add a mock case to.
         TReturn (TInterface::*_method)(TArguments...);
 
+        /// A string describing how a call is made to the method being mocked.
+        std::string _methodString;
+
     public:
         /// Creates a MockWithMethod.
         ///
         /// @param mock The InnerMock to add a mock case to.
         /// @param method The method to add a mock case to.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         MockWithMethod(
             Internal::InnerMock<TInterface>& mock,
-            TReturn (TInterface::*method)(TArguments...))
+            TReturn (TInterface::*method)(TArguments...),
+            std::string methodString)
             : _mock(mock)
-            , _method(std::move(method)) {
+            , _method(std::move(method))
+            , _methodString(std::move(methodString)) {
         }
 
         /// Creates a MockWithArguments used to add a mock case matching the
@@ -37,10 +44,11 @@ class MockWithMethod {
         MockWithArguments<TInterface, id, TReturn, TArguments...> with(
             TArguments... arguments) {
             // Create and return a MockWithArguments with the InnerMock,
-            // the method and the arguments.
+            // the method, the call string and the arguments.
             return MockWithArguments<TInterface, id, TReturn, TArguments...>(
                 _mock,
                 _method,
+                _methodString,
                 std::tuple<TArguments...>(std::move(arguments)...));
         }
 

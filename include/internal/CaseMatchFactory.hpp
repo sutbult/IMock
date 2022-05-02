@@ -3,7 +3,7 @@
 #include <memory>
 
 #include <internal/CaseMatch.hpp>
-#include <internal/make_unique.hpp>
+#include <internal/makeUnique.hpp>
 
 namespace IMock::Internal {
 
@@ -31,7 +31,7 @@ class CaseMatchFactory {
         template <typename TReturn>
         static CaseMatch<TReturn> match(TReturn returnValue) {
             // Create and return a CaseMatch with the provided return value.
-            return CaseMatch<TReturn>(make_unique<NonVoidReturnValue<TReturn>>(
+            return CaseMatch<TReturn>(makeUnique<NonVoidReturnValue<TReturn>>(
                 std::move(returnValue)));
         }
 
@@ -41,7 +41,7 @@ class CaseMatchFactory {
         /// @return A CaseMatch indicating a match.
         static CaseMatch<void> matchVoid() {
             // Create and return a CaseMatch with a VoidReturnValue.
-            return CaseMatch<void>(make_unique<VoidReturnValue>());
+            return CaseMatch<void>(makeUnique<VoidReturnValue>());
         }
 };
 

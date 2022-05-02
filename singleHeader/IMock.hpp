@@ -7,7 +7,9 @@
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace IMock {
 
@@ -109,10 +111,13 @@ namespace IMock::Internal {
 
 /// Creates a unique_ptr.
 ///
+/// Named makeUnique using camel casing to not cause any ambiguities with
+/// std::make_unique.
+///
 /// @param arguments Arguments used to create the contained value.
 /// @return A created unique_ptr.
 template<typename TPointer, typename... TArguments>
-std::unique_ptr<TPointer> make_unique(TArguments&&... arguments)
+std::unique_ptr<TPointer> makeUnique(TArguments&&... arguments)
 {
     // Check if std::make_unique is available (introduced in C++14).
     #ifdef __cpp_lib_make_unique
@@ -166,9 +171,88 @@ namespace IMock::Exception {
 class UnmockedCallException : public MockException {
     public:
         /// Creates an UnmockedCallException.
-        UnmockedCallException()
-            : MockException("A call was made to a method that has been mocked "
-                "but the arguments does not match any mocked arguments.") {
+        ///
+        /// @param callString A string describing how the call was made.
+        UnmockedCallException(
+            std::string callString)
+            : MockException(getMessage(std::move(callString))) {
+        }
+
+    private:
+        /// Creates an exception message.
+        ///
+        /// @param callString A string describing how the call was made.
+        /// @return A generated exception message.
+        static std::string getMessage(
+            std::string callString) {
+            // Create and return a message containing callString.
+            return "The call "
+                + callString
+                + " does not match any mocked case.";
+        }
+};
+
+}
+
+namespace IMock::Internal {
+
+/// Utility making it possible to call a callback using arguments contained in
+/// a tuple.
+class Apply {
+    private:
+        // A trick to statically produce a list of integers. The solution has
+        // been taken from: https://stackoverflow.com/a/7858971/6188897
+        template<int ...>
+        struct seq {
+        };
+
+        template<int N, int ...S>
+        struct gens : gens<N-1, N-1, S...> {
+        };
+
+        template<int ...S>
+        struct gens<0, S...>{
+            typedef seq<S...> type;
+        };
+
+        /// Calls the provided callback with the arguments in the provided
+        /// tuple.
+        ///
+        /// Also includes a "seq" making it possible to extract the arguments
+        /// from the tuple.
+        ///
+        /// @param callback The function to call.
+        /// @param arguments The arguments to call the callback with.
+        /// @return The return value from the callback.
+        template<int ...S, typename TReturn,
+            typename ...TArguments>
+        static TReturn applyWithSeq(
+            seq<S...>,
+            std::function<TReturn (TArguments...)> callback,
+            std::tuple<TArguments...> arguments) {
+            // Call callback with the extracted arguments.
+            return callback(std::move(std::get<S>(arguments))...);
+        }
+
+    public:
+        /// Apply is not supposed to be instantiated since it only contains
+        /// static methods.
+        Apply() = delete;
+
+        /// Calls the provided callback with the arguments in the provided
+        /// tuple.
+        ///
+        /// @param callback The function to call.
+        /// @param arguments The arguments to call the callback with.
+        /// @return The return value from the callback.
+        template<typename TReturn, typename ...TArguments>
+        static TReturn apply(
+            std::function<TReturn (TArguments...)> callback,
+            std::tuple<TArguments...> arguments) {
+            // Create a "gens" with the number of arguments.
+            return applyWithSeq(typename gens<sizeof...(TArguments)>::type(),
+                callback,
+                std::move(arguments));
         }
 };
 
@@ -211,6 +295,46 @@ class IMockMethodNonGeneric {
 
 namespace IMock::Internal {
 
+/// Joins vectors of strings using a provided delimiter.
+class JoinStrings {
+    public:
+        /// JoinStrings is not supposed to be instantiated since it only
+        /// contains static methods.
+        JoinStrings() = delete;
+
+        /// Joins a vector of strings using a provided delimiter.
+        ///
+        /// @param delimiter The string to insert between each string.
+        /// @param strings The vector of strings to be joined.
+        static std::string joinStrings(
+            std::string delimiter,
+            std::vector<std::string> strings) {
+            // Create an empty list to store the result.
+            std::string result = "";
+
+            // Process each string.
+            for(std::vector<std::string>::iterator iterator = strings.begin();
+                iterator < strings.end();
+                iterator++) {
+                // Check if the current string is a non-initial string.
+                if(iterator > strings.begin()) {
+                    // Append the delimiter if that's the case.
+                    result.append(delimiter);
+                }
+
+                // Append the current string.
+                result.append(*iterator);
+            }
+
+            // Return the joined string.
+            return result;
+        }
+};
+
+}
+
+namespace IMock::Internal {
+
 /// Contains a call count that can be increased and retrieved.
 class MockCaseMutableCallCount {
     private:
@@ -235,6 +359,90 @@ class MockCaseMutableCallCount {
         int getCallCount() {
             // Return the call count.
             return _callCount;
+        }
+};
+
+}
+
+namespace IMock::Internal {
+
+/// Converts values to strings.
+class ToString {
+    private:
+        // A trick to see if two types can use the insertion operator.
+        // The solution has been taken from:
+        // https://stackoverflow.com/a/22759544/6188897
+        template<typename S, typename T>
+        class is_streamable
+        {
+            private:
+                template<typename SS, typename TT>
+                static auto test(int) -> decltype(
+                    std::declval<SS&>() << std::declval<TT>(),
+                    std::true_type());
+
+                template<typename, typename>
+                static auto test(...) -> std::false_type;
+
+            public:
+                static const bool value = decltype(test<S,T>(0))::value;
+        };
+
+    public:
+        /// ToString is not supposed to be instantiated since it only contains
+        /// static methods.
+        ToString() = delete;
+
+        /// Converts a value to a string.
+        ///
+        /// Uses the insertion operator since it's available.
+        ///
+        /// @param value The value to be converted.
+        /// @return A string representation of the value.
+        template <typename TValue>
+        static std::string toString(
+            typename std::enable_if<
+                is_streamable<std::stringstream, TValue>::value,
+                TValue>::type value) {
+            // Create a stringstream.
+            std::stringstream out;
+
+            // Append the value.
+            out << value;
+
+            // Create a string and return it.
+            return out.str();
+        }
+
+        /// Converts a value to a string.
+        ///
+        /// Returns a question mark since the insertion operator is unavailable.
+        ///
+        /// @param value The value to be converted.
+        /// @return A string representation of the value.
+        template <typename TValue>
+        static std::string toString(
+            typename std::enable_if<
+                !is_streamable<std::stringstream, TValue>::value,
+                TValue>::type value) {
+            // Return a question mark.
+            return "?";
+        }
+
+        /// Converts a number of values to strings.
+        /// Uses ToString::toString internally.
+        ///
+        /// @param values The values to be converted.
+        /// @return String representations of the values.
+        template <typename ...TValue>
+        static std::vector<std::string> toStrings(TValue... values) {
+            // Call toString for each value.
+            std::vector<std::string> strings = {
+                toString<TValue>(std::move(values))...
+            };
+
+            // Return the strings.
+            return strings;
         }
 };
 
@@ -416,10 +624,17 @@ class MockMethod : public IMockMethodNonGeneric {
         /// The most recently mock case to have been added.
         std::unique_ptr<InnerMockCase> _topMockCase;
 
+        /// A string describing how a call is made to the method being mocked.
+        std::string _methodString;
+
     public:
         /// Creates a MockMethod without any mock cases.
-        MockMethod()
-            : _topMockCase(std::unique_ptr<InnerMockCase>(nullptr)) {
+        ///
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
+        MockMethod(std::string methodString)
+            : _topMockCase(std::unique_ptr<InnerMockCase>(nullptr))
+            , _methodString(std::move(methodString)) {
         }
 
         /// Destructs the MockMethod by deleting all InnerMockCase instances
@@ -452,7 +667,7 @@ class MockMethod : public IMockMethodNonGeneric {
                 = std::make_shared<MockCaseMutableCallCount>();
 
             // Create a InnerMockCase and assign it to _topMockCase.
-            _topMockCase = Internal::make_unique<InnerMockCase>(
+            _topMockCase = Internal::makeUnique<InnerMockCase>(
                 std::move(mockCase),
                 callCountPointer,
                 std::move(_topMockCase));
@@ -500,9 +715,39 @@ class MockMethod : public IMockMethodNonGeneric {
                 }
             }
 
-            // Throw an UnmockedCallException if no mock case matches the
-            // arguments.
-            throw Exception::UnmockedCallException();
+            // No mock case matches the arguments.
+
+            // Create a call string from the arguments.
+            std::string callString = getCallString(std::move(tupleArguments));
+
+            // Throw an UnmockedCallException.
+            throw Exception::UnmockedCallException(callString);
+        }
+
+    private:
+        /// Create a call string from the provided arguments.
+        ///
+        /// @param arguments The arguments of the call.
+        /// @return A string describing how the call was made.
+        std::string getCallString(std::tuple<TArguments...> arguments) {
+            // Convert the arguments to strings.
+            std::vector<std::string> stringArguments
+                = Apply::apply<std::vector<std::string>, TArguments...>(
+                    ToString::toStrings<TArguments...>,
+                    std::move(arguments));
+
+            // Join the argument strings.
+            std::string argumentsString = JoinStrings::joinStrings(
+                ", ",
+                std::move(stringArguments));
+
+            // Create a call string.
+            std::string callString
+                = _methodString
+                + "(" + argumentsString + ")";
+
+            // Return the call string.
+            return callString;
         }
 };
 
@@ -809,12 +1054,14 @@ class InnerMock {
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
             TReturn (TInterface::*method)(TArguments...),
+            std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Forward the call to addCaseWithOnCall.
             return addCaseWithOnCall<TReturn, TArguments...>(
                 id,
                 onCall<id, TReturn, TArguments...>,
                 method,
+                std::move(methodString),
                 std::move(mockCase));
         }
 
@@ -834,6 +1081,7 @@ class InnerMock {
             MockCaseID id,
             TReturn (*onCall)(MockFake*, TArguments...),
             TReturn (TInterface::*method)(TArguments...),
+            std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Check if a virtual table offset has been stored in
             // _virtualTableOffsets for the provided MockCaseID.
@@ -852,8 +1100,9 @@ class InnerMock {
             if(methodHasNoMocks) {
                 // Create and store a MockMethod if the method has no existing
                 // mock cases.
-                _mockMethods[virtualTableOffset] = make_unique<
-                    MockMethod<TReturn, TArguments...>>();
+                _mockMethods[virtualTableOffset] = makeUnique<
+                    MockMethod<TReturn, TArguments...>>(
+                        std::move(methodString));
 
                 // Store a pointer to onCall in the virtual table.
                 _virtualTable.get()[virtualTableOffset]
@@ -945,70 +1194,6 @@ class MockWithArgumentsUsedTwiceException : public MockException {
 
 namespace IMock::Internal {
 
-/// Utility making it possible to call a callback using arguments contained in
-/// a tuple.
-class Apply {
-    private:
-        // A trick to statically produce a list of integers. Solution taken
-        // from: https://stackoverflow.com/a/7858971/6188897
-        template<int ...>
-        struct seq {
-        };
-
-        template<int N, int ...S>
-        struct gens : gens<N-1, N-1, S...> {
-        };
-
-        template<int ...S>
-        struct gens<0, S...>{
-            typedef seq<S...> type;
-        };
-
-        /// Calls the provided callback with the arguments in the provided
-        /// tuple.
-        ///
-        /// Also includes a "seq" making it possible to extract the arguments
-        /// from the tuple.
-        ///
-        /// @param callback The function to call.
-        /// @param arguments The arguments to call the callback with.
-        /// @return The return value from the callback.
-        template<int ...S, typename TReturn,
-            typename ...TArguments>
-        static TReturn applyWithSeq(
-            seq<S...>,
-            std::function<TReturn (TArguments...)> callback,
-            std::tuple<TArguments...> arguments) {
-            // Call callback with the extracted arguments.
-            return callback(std::move(std::get<S>(arguments))...);
-        }
-
-    public:
-        /// Apply is not supposed to be instantiated since it only contains
-        /// static methods.
-        Apply() = delete;
-
-        /// Calls the provided callback with the arguments in the provided
-        /// tuple.
-        ///
-        /// @param callback The function to call.
-        /// @param arguments The arguments to call the callback with.
-        /// @return The return value from the callback.
-        template<typename TReturn, typename ...TArguments>
-        static TReturn apply(
-            std::function<TReturn (TArguments...)> callback,
-            std::tuple<TArguments...> arguments) {
-            // Create a "gens" with the number of arguments.
-            return applyWithSeq(typename gens<sizeof...(TArguments)>::type(),
-                callback,
-                std::move(arguments));
-        }
-};
-
-}
-
-namespace IMock::Internal {
-
 /// Utility to create CaseMatch instances.
 class CaseMatchFactory {
     public:
@@ -1033,7 +1218,7 @@ class CaseMatchFactory {
         template <typename TReturn>
         static CaseMatch<TReturn> match(TReturn returnValue) {
             // Create and return a CaseMatch with the provided return value.
-            return CaseMatch<TReturn>(make_unique<NonVoidReturnValue<TReturn>>(
+            return CaseMatch<TReturn>(makeUnique<NonVoidReturnValue<TReturn>>(
                 std::move(returnValue)));
         }
 
@@ -1043,7 +1228,7 @@ class CaseMatchFactory {
         /// @return A CaseMatch indicating a match.
         static CaseMatch<void> matchVoid() {
             // Create and return a CaseMatch with a VoidReturnValue.
-            return CaseMatch<void>(make_unique<VoidReturnValue>());
+            return CaseMatch<void>(makeUnique<VoidReturnValue>());
         }
 };
 
@@ -1109,18 +1294,25 @@ class MockWithArguments {
         /// Describes if the instance already has been used.
         bool _used;
 
+        /// A string describing how a call is made to the method being mocked.
+        std::string _methodString;
+
     public:
         /// Creates a MockWithArguments.
         ///
         /// @param mock The InnerMock to add a mock case to.
         /// @param method The method to add a mock case to.
         /// @param arguments The arguments to match calls with.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         MockWithArguments(
             Internal::InnerMock<TInterface>& mock,
             TReturn (TInterface::*method)(TArguments...),
+            std::string methodString,
             std::tuple<TArguments...> arguments)
             : _mock(mock)
             , _method(std::move(method))
+            , _methodString(std::move(methodString))
             , _arguments(std::move(arguments))
             , _used(false) {
         }
@@ -1202,7 +1394,7 @@ class MockWithArguments {
 
             // Create a MockWithArgumentsCase.
             std::unique_ptr<Internal::ICase<TReturn, TArguments...>> mockCase
-                = Internal::make_unique<
+                = Internal::makeUnique<
                 Internal::MockWithArgumentsCase<TReturn, TArguments...>>(
 
                 // Move the arguments, which means the instance cannot be used
@@ -1213,6 +1405,7 @@ class MockWithArguments {
             // Add the case to InnerMock.
             return _mock.template addCase<id, TReturn, TArguments...>(
                 _method,
+                std::move(_methodString),
                 std::move(mockCase));
         }
 };
@@ -1232,16 +1425,23 @@ class MockWithMethod {
         /// The method to add a mock case to.
         TReturn (TInterface::*_method)(TArguments...);
 
+        /// A string describing how a call is made to the method being mocked.
+        std::string _methodString;
+
     public:
         /// Creates a MockWithMethod.
         ///
         /// @param mock The InnerMock to add a mock case to.
         /// @param method The method to add a mock case to.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         MockWithMethod(
             Internal::InnerMock<TInterface>& mock,
-            TReturn (TInterface::*method)(TArguments...))
+            TReturn (TInterface::*method)(TArguments...),
+            std::string methodString)
             : _mock(mock)
-            , _method(std::move(method)) {
+            , _method(std::move(method))
+            , _methodString(std::move(methodString)) {
         }
 
         /// Creates a MockWithArguments used to add a mock case matching the
@@ -1252,10 +1452,11 @@ class MockWithMethod {
         MockWithArguments<TInterface, id, TReturn, TArguments...> with(
             TArguments... arguments) {
             // Create and return a MockWithArguments with the InnerMock,
-            // the method and the arguments.
+            // the method, the call string and the arguments.
             return MockWithArguments<TInterface, id, TReturn, TArguments...>(
                 _mock,
                 _method,
+                _methodString,
                 std::tuple<TArguments...>(std::move(arguments)...));
         }
 
@@ -1285,15 +1486,19 @@ class MockWithID {
         /// method.
         ///
         /// @param method The method to add mock cases for.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         /// @return A MockWithMethod associated with the method.
         template <typename TReturn, typename ...TArguments>
         MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
-            TReturn (TInterface::*method)(TArguments...)) {
-            // Create and return a MockWithMethod with the InnerMock and the
-            // method.
+            TReturn (TInterface::*method)(TArguments...),
+            std::string methodString) {
+            // Create and return a MockWithMethod with the InnerMock,
+            // the method and the call string.
             return MockWithMethod<TInterface, id, TReturn, TArguments...>(
                 _mock,
-                method);
+                method,
+                std::move(methodString));
         }
 };
 
@@ -1345,4 +1550,6 @@ class Mock {
 /// Call this with a Mock and a method on the mocked interface to get a
 /// MockWithMethod to use to add a mock case.
 #define when(mock, method) \
-    mock.withCounter<__COUNTER__>().withMethod(&mockType(mock)::method)
+    mock.withCounter<__COUNTER__>().withMethod( \
+        &mockType(mock)::method, \
+        #mock ".get()." #method)

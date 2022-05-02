@@ -6,10 +6,13 @@ namespace IMock::Internal {
 
 /// Creates a unique_ptr.
 ///
+/// Named makeUnique using camel casing to not cause any ambiguities with
+/// std::make_unique.
+///
 /// @param arguments Arguments used to create the contained value.
 /// @return A created unique_ptr.
 template<typename TPointer, typename... TArguments>
-std::unique_ptr<TPointer> make_unique(TArguments&&... arguments)
+std::unique_ptr<TPointer> makeUnique(TArguments&&... arguments)
 {
     // Check if std::make_unique is available (introduced in C++14).
     #ifdef __cpp_lib_make_unique

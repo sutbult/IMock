@@ -5,7 +5,7 @@
 
 #include <MockCaseID.hpp>
 #include <internal/CaseMatch.hpp>
-#include <internal/make_unique.hpp>
+#include <internal/makeUnique.hpp>
 #include <internal/MockMethod.hpp>
 #include <internal/VirtualTable.hpp>
 
@@ -86,12 +86,14 @@ class InnerMock {
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
             TReturn (TInterface::*method)(TArguments...),
+            std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Forward the call to addCaseWithOnCall.
             return addCaseWithOnCall<TReturn, TArguments...>(
                 id,
                 onCall<id, TReturn, TArguments...>,
                 method,
+                std::move(methodString),
                 std::move(mockCase));
         }
 
@@ -111,6 +113,7 @@ class InnerMock {
             MockCaseID id,
             TReturn (*onCall)(MockFake*, TArguments...),
             TReturn (TInterface::*method)(TArguments...),
+            std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Check if a virtual table offset has been stored in
             // _virtualTableOffsets for the provided MockCaseID.
@@ -129,8 +132,9 @@ class InnerMock {
             if(methodHasNoMocks) {
                 // Create and store a MockMethod if the method has no existing
                 // mock cases.
-                _mockMethods[virtualTableOffset] = make_unique<
-                    MockMethod<TReturn, TArguments...>>();
+                _mockMethods[virtualTableOffset] = makeUnique<
+                    MockMethod<TReturn, TArguments...>>(
+                        std::move(methodString));
 
                 // Store a pointer to onCall in the virtual table.
                 _virtualTable.get()[virtualTableOffset]

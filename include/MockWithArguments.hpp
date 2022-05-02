@@ -7,7 +7,7 @@
 #include <internal/Apply.hpp>
 #include <internal/CaseMatchFactory.hpp>
 #include <internal/InnerMock.hpp>
-#include <internal/make_unique.hpp>
+#include <internal/makeUnique.hpp>
 #include <internal/MockWithArgumentsCase.hpp>
 #include <MockCaseCallCount.hpp>
 #include <MockCaseID.hpp>
@@ -31,18 +31,25 @@ class MockWithArguments {
         /// Describes if the instance already has been used.
         bool _used;
 
+        /// A string describing how a call is made to the method being mocked.
+        std::string _methodString;
+
     public:
         /// Creates a MockWithArguments.
         ///
         /// @param mock The InnerMock to add a mock case to.
         /// @param method The method to add a mock case to.
         /// @param arguments The arguments to match calls with.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         MockWithArguments(
             Internal::InnerMock<TInterface>& mock,
             TReturn (TInterface::*method)(TArguments...),
+            std::string methodString,
             std::tuple<TArguments...> arguments)
             : _mock(mock)
             , _method(std::move(method))
+            , _methodString(std::move(methodString))
             , _arguments(std::move(arguments))
             , _used(false) {
         }
@@ -124,7 +131,7 @@ class MockWithArguments {
 
             // Create a MockWithArgumentsCase.
             std::unique_ptr<Internal::ICase<TReturn, TArguments...>> mockCase
-                = Internal::make_unique<
+                = Internal::makeUnique<
                 Internal::MockWithArgumentsCase<TReturn, TArguments...>>(
 
                 // Move the arguments, which means the instance cannot be used
@@ -135,6 +142,7 @@ class MockWithArguments {
             // Add the case to InnerMock.
             return _mock.template addCase<id, TReturn, TArguments...>(
                 _method,
+                std::move(_methodString),
                 std::move(mockCase));
         }
 };

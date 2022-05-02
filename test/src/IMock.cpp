@@ -84,9 +84,8 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             REQUIRE_THROWS_MATCHES(
                 mock.get().add(1, 2),
                 IMock::Exception::UnmockedCallException,
-                Catch::Message("A call was made to a method that has been "
-                    "mocked but the arguments does not match any mocked "
-                    "arguments."));
+                Catch::Message("The call mock.get().add(1, 2) does not match "
+                    "any mocked case."));
         }
 
         SECTION("call another method that has not been mocked") {
@@ -479,9 +478,8 @@ TEST_CASE("can mock an interface without any return value",
             REQUIRE_THROWS_MATCHES(
                 mock.get().setInt(2),
                 IMock::Exception::UnmockedCallException,
-                Catch::Message("A call was made to a method that has been "
-                    "mocked but the arguments does not match any mocked "
-                    "arguments."));
+                Catch::Message("The call mock.get().setInt(2) does not match "
+                    "any mocked case."));
         }
 
         SECTION("mock setInt again") {
@@ -542,7 +540,7 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
             ///
             /// @param value The value to held.
             NoCopy(int value)
-                : _value(IMock::Internal::make_unique<int>(std::move(value))) {
+                : _value(IMock::Internal::makeUnique<int>(std::move(value))) {
             }
 
             /// Gets the value.
@@ -610,9 +608,8 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
             REQUIRE_THROWS_MATCHES(
                 mock.get().setInt(NoCopy(2)),
                 IMock::Exception::UnmockedCallException,
-                Catch::Message("A call was made to a method that has been "
-                    "mocked but the arguments does not match any mocked "
-                    "arguments."));
+                Catch::Message("The call mock.get().setInt(?) does not match "
+                    "any mocked case."));
         }
 
         SECTION("mock setInt again") {
