@@ -1,6 +1,7 @@
 #pragma once
 
 #include <internal/InnerMock.hpp>
+#include <internal/MockWithMethodCase.hpp>
 #include <MockCaseID.hpp>
 #include <MockWithArguments.hpp>
 
@@ -52,7 +53,23 @@ class MockWithMethod {
                 std::tuple<TArguments...>(std::move(arguments)...));
         }
 
-        // TODO: Add a method for adding a mock case with a fake.
+        /// Adds a fake handling the method call.
+        ///
+        /// @param fake A callback to call when the method is called.
+        /// @return A MockCaseCallCount that can be queried about the number of
+        /// calls done to the added mock case.
+        MockCaseCallCount fake(std::function<TReturn (TArguments...)> fake) {
+            // Create a MockWithMethodCase.
+            std::unique_ptr<Internal::ICase<TReturn, TArguments...>> mockCase
+                = Internal::makeUnique<Internal::MockWithMethodCase<
+                    TReturn, TArguments...>>(fake);
+
+            // Add the case to InnerMock.
+            return _mock.template addCase<id, TReturn, TArguments...>(
+                _method,
+                std::move(_methodString),
+                std::move(mockCase));
+        }
 };
 
 }

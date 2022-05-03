@@ -111,7 +111,8 @@ class MockWithArguments {
         /// Adds a fake handling the method call when called with the associated
         /// arguments.
         ///
-        /// @param fake A method to call when a match happens.
+        /// @param fake A callback to call when the method is called and a match
+        /// happens.
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
         MockCaseCallCount fake(std::function<TReturn (TArguments...)> fake) {
@@ -119,7 +120,7 @@ class MockWithArguments {
             return fakeGeneral([fake](std::tuple<TArguments...> arguments) {
                 // Return a CaseMatch for the fake.
                 return Internal::CaseMatchFactory::matchFake(
-                    std::move(fake),
+                    fake,
                     std::move(arguments));
             });
         }

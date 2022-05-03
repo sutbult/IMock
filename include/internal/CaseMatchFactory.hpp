@@ -47,7 +47,8 @@ class CaseMatchFactory {
         /// Creates a CaseMatch indicating a match has been made and handle the
         /// match with a fake.
         ///
-        /// @param returnValue The call's return value.
+        /// @param fake The fake to call.
+        /// @param arguments The arguments to call the fake with.
         /// @return A CaseMatch indicating a match with the provided fake.
         template <typename TReturn, typename ...TArguments>
         static CaseMatch<TReturn> matchFake(
