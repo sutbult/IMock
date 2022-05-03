@@ -602,6 +602,8 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
     class INoCopyArgument {
         public:
             virtual void setInt(NoCopy) = 0;
+            virtual NoCopy getInt() = 0;
+            virtual NoCopy id(NoCopy) = 0;
     };
 
     // Create a Mock of INoCopyArgument.
@@ -683,6 +685,74 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
             }
 
             SECTION("call add with the first mock") {
+                // Call setInt with the value of the first mock.
+                mock.get().setInt(NoCopy(1));
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the second mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                        .verifyNeverCalled());
+                }
+            }
+        }
+
+        SECTION("mock another method") {
+            // Generate a bool to have two configurations.
+            bool withGetInt = GENERATE(true, false);
+
+            // Mock id.
+            IMock::MockCaseCallCount mockCaseCallCountSecond = withGetInt
+                // Mock getInt if withGetInt is true.
+                ? when(mock, getInt)
+                    .with()
+                    .fake([]() {
+                        // Create a NoCopy and return it.
+                        return NoCopy(1);
+                    })
+
+                // Mock id if withGetInt is false.
+                : when(mock, id)
+                    .with(NoCopy(1))
+                    .fake([](NoCopy noCopy) {
+                        // Return the argument.
+                        return noCopy;
+                    });
+
+            SECTION("call the other method") {
+                // Call id.
+                NoCopy result = withGetInt
+                    // Call getInt if withGetInt is true.
+                    ? mock.get().getInt()
+
+                    // Call id if withGetInt is false.
+                    : mock.get().id(NoCopy(1));
+
+                SECTION("the result is correct") {
+                    // Verify the result is 1.
+                    REQUIRE(result.getValue() == 1);
+                }
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the first mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                }
+            }
+
+            SECTION("call setInt") {
                 // Call setInt with the value of the first mock.
                 mock.get().setInt(NoCopy(1));
 
