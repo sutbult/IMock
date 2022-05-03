@@ -28,10 +28,22 @@ TEST_CASE("can mock a basic interface", "[basic]") {
     }
 
     SECTION("mock add") {
+        // Generate a bool to have two configurations.
+        bool withReturns = GENERATE(true, false);
+
         // Mock add.
-        IMock::MockCaseCallCount mockCaseCallCount = when(mock, add)
-            .with(1, 1)
-            .returns(2);
+        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+            // Use returns if withReturns is true.
+            ? when(mock, add)
+                .with(1, 1)
+                .returns(2)
+
+            // Use fake if withReturns is false.
+            : when(mock, add)
+                .with(1, 1)
+                .fake([](int a, int b) {
+                    return a + b;
+                });
 
         SECTION("no calls have initially been made") {
             SECTION("verifyNeverCalled() does not throw any exception") {
@@ -373,10 +385,22 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
     }
 
     SECTION("mock getInt") {
+        // Generate a bool to have two configurations.
+        bool withReturns = GENERATE(true, false);
+
         // Mock getInt.
-        IMock::MockCaseCallCount mockCaseCallCount = when(mock, getInt)
-            .with()
-            .returns(1);
+        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+            // Use returns if withReturns is true.
+            ? when(mock, getInt)
+                .with()
+                .returns(1)
+
+            // Use fake if withReturns is false.
+            : when(mock, getInt)
+                .with()
+                .fake([]() {
+                    return 1;
+                });
 
         SECTION("no calls have initially been made") {
             // Call verifyNeverCalled and verify it does not throw an exception.
@@ -452,10 +476,21 @@ TEST_CASE("can mock an interface without any return value",
     }
 
     SECTION("mock setInt") {
+        // Generate a bool to have two configurations.
+        bool withReturns = GENERATE(true, false);
+
         // Mock setInt.
-        IMock::MockCaseCallCount mockCaseCallCount = when(mock, setInt)
-            .with(1)
-            .returns();
+        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+            // Use returns if withReturns is true.
+            ? when(mock, setInt)
+                .with(1)
+                .returns()
+
+            // Use fake if withReturns is false.
+            : when(mock, setInt)
+                .with(1)
+                .fake([](int i) {
+                });
 
         SECTION("no calls have initially been made") {
             // Call verifyNeverCalled and verify it does not throw an exception.
@@ -582,10 +617,21 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
     }
 
     SECTION("mock setInt") {
+        // Generate a bool to have two configurations.
+        bool withReturns = GENERATE(true, false);
+
         // Mock setInt.
-        IMock::MockCaseCallCount mockCaseCallCount = when(mock, setInt)
-            .with(NoCopy(1))
-            .returns();
+        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+            // Use returns if withReturns is true.
+            ? when(mock, setInt)
+                .with(NoCopy(1))
+                .returns()
+
+            // Use fake if withReturns is false.
+            : when(mock, setInt)
+                .with(NoCopy(1))
+                .fake([](NoCopy noCopy) {
+                });
 
         SECTION("no calls have initially been made") {
             // Call verifyNeverCalled and verify it does not throw an exception.

@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include <internal/Apply.hpp>
+
 namespace IMock::Internal {
 
 /// Interface for retrieving a return value.
@@ -13,6 +15,9 @@ class IReturnValue {
         }
 
         /// Gets the return value.
+        ///
+        /// NOTICE: The method can only be called once for each instance.
+        /// Any subsequent calls may result in an exception being thrown.
         ///
         /// @return The return value.
         virtual TReturn getReturnValue() = 0;
@@ -43,6 +48,35 @@ class NonVoidReturnValue : public IReturnValue<TReturn> {
         virtual TReturn getReturnValue() override {
             // Return the stored value.
             return _returnValue;
+        }
+};
+
+/// Implements FakeReturnValue to make getReturnValue call the provided fake
+/// with the provided arguments and return its return value.
+template <typename TReturn, typename ...TArguments>
+class FakeReturnValue : public IReturnValue<TReturn> {
+    private:
+        /// The fake to call.
+        std::function<TReturn (TArguments...)> _fake;
+
+        /// The arguments to call the fake with.
+        std::tuple<TArguments...> _arguments;
+
+    public:
+        /// Creates a FakeReturnValue.
+        ///
+        /// @param fake The fake to call.
+        /// @param arguments The arguments to call the fake with.
+        FakeReturnValue(
+            std::function<TReturn (TArguments...)> fake,
+            std::tuple<TArguments...> arguments)
+            : _fake(std::move(fake))
+            , _arguments(std::move(arguments)) {
+        }
+
+        virtual TReturn getReturnValue() override {
+            // Forward the call to _fake.
+            return Apply::apply(_fake, std::move(_arguments));
         }
 };
 

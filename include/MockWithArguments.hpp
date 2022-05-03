@@ -74,8 +74,9 @@ class MockWithArguments {
             std::tuple<TReturn> wrappedReturnValue = (returnValue);
 
             // Create a fake.
-            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake
-                = [wrappedReturnValue] (TArguments... arguments) {
+            std::function<Internal::CaseMatch<TReturn>
+                (std::tuple<TArguments...>)> fake
+                = [wrappedReturnValue] (std::tuple<TArguments...> arguments) {
                     // Return a CaseMatch containing the return value.
                     return Internal::CaseMatchFactory::match<TReturn>(
                         std::get<0>(wrappedReturnValue));
@@ -96,8 +97,9 @@ class MockWithArguments {
             typename std::enable_if<std::is_void<R>::value, R>::type* = nullptr>
         MockCaseCallCount returns() {
             // Create a fake.
-            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake
-                = [] (TArguments... arguments) {
+            std::function<Internal::CaseMatch<TReturn>
+                (std::tuple<TArguments...>)> fake
+                = [] (std::tuple<TArguments...> arguments) {
                     // Return a CaseMatch for void.
                     return Internal::CaseMatchFactory::matchVoid();
                 };
@@ -106,7 +108,21 @@ class MockWithArguments {
             return fakeGeneral(fake);
         }
 
-        // TODO: Add a method for adding a mock case with a fake.
+        /// Adds a fake handling the method call when called with the associated
+        /// arguments.
+        ///
+        /// @param fake A method to call when a match happens.
+        /// @return A MockCaseCallCount that can be queried about the number of
+        /// calls done to the added mock case.
+        MockCaseCallCount fake(std::function<TReturn (TArguments...)> fake) {
+            // Call fakeGeneral with a fake.
+            return fakeGeneral([fake](std::tuple<TArguments...> arguments) {
+                // Return a CaseMatch for the fake.
+                return Internal::CaseMatchFactory::matchFake(
+                    std::move(fake),
+                    std::move(arguments));
+            });
+        }
 
     private:
         /// Adds a mock case making calls to the associated method be forwarded
@@ -116,7 +132,8 @@ class MockWithArguments {
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
         MockCaseCallCount fakeGeneral(
-            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake) {
+            std::function<Internal::CaseMatch<TReturn>
+                (std::tuple<TArguments...>)> fake) {
             // Check if the instance already has been used.
             if(_used) {
                 // Throw a MockWithArgumentsUsedTwiceException since the

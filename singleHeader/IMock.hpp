@@ -20,6 +20,70 @@ typedef unsigned int MockCaseID;
 
 namespace IMock::Internal {
 
+/// Utility making it possible to call a callback using arguments contained in
+/// a tuple.
+class Apply {
+    private:
+        // A trick to statically produce a list of integers. The solution has
+        // been taken from: https://stackoverflow.com/a/7858971/6188897
+        template<int ...>
+        struct seq {
+        };
+
+        template<int N, int ...S>
+        struct gens : gens<N-1, N-1, S...> {
+        };
+
+        template<int ...S>
+        struct gens<0, S...>{
+            typedef seq<S...> type;
+        };
+
+        /// Calls the provided callback with the arguments in the provided
+        /// tuple.
+        ///
+        /// Also includes a "seq" making it possible to extract the arguments
+        /// from the tuple.
+        ///
+        /// @param callback The function to call.
+        /// @param arguments The arguments to call the callback with.
+        /// @return The return value from the callback.
+        template<int ...S, typename TReturn,
+            typename ...TArguments>
+        static TReturn applyWithSeq(
+            seq<S...>,
+            std::function<TReturn (TArguments...)> callback,
+            std::tuple<TArguments...> arguments) {
+            // Call callback with the extracted arguments.
+            return callback(std::move(std::get<S>(arguments))...);
+        }
+
+    public:
+        /// Apply is not supposed to be instantiated since it only contains
+        /// static methods.
+        Apply() = delete;
+
+        /// Calls the provided callback with the arguments in the provided
+        /// tuple.
+        ///
+        /// @param callback The function to call.
+        /// @param arguments The arguments to call the callback with.
+        /// @return The return value from the callback.
+        template<typename TReturn, typename ...TArguments>
+        static TReturn apply(
+            std::function<TReturn (TArguments...)> callback,
+            std::tuple<TArguments...> arguments) {
+            // Create a "gens" with the number of arguments.
+            return applyWithSeq(typename gens<sizeof...(TArguments)>::type(),
+                callback,
+                std::move(arguments));
+        }
+};
+
+}
+
+namespace IMock::Internal {
+
 /// Interface for retrieving a return value.
 template <typename TReturn>
 class IReturnValue {
@@ -29,6 +93,9 @@ class IReturnValue {
         }
 
         /// Gets the return value.
+        ///
+        /// NOTICE: The method can only be called once for each instance.
+        /// Any subsequent calls may result in an exception being thrown.
         ///
         /// @return The return value.
         virtual TReturn getReturnValue() = 0;
@@ -59,6 +126,35 @@ class NonVoidReturnValue : public IReturnValue<TReturn> {
         virtual TReturn getReturnValue() override {
             // Return the stored value.
             return _returnValue;
+        }
+};
+
+/// Implements FakeReturnValue to make getReturnValue call the provided fake
+/// with the provided arguments and return its return value.
+template <typename TReturn, typename ...TArguments>
+class FakeReturnValue : public IReturnValue<TReturn> {
+    private:
+        /// The fake to call.
+        std::function<TReturn (TArguments...)> _fake;
+
+        /// The arguments to call the fake with.
+        std::tuple<TArguments...> _arguments;
+
+    public:
+        /// Creates a FakeReturnValue.
+        ///
+        /// @param fake The fake to call.
+        /// @param arguments The arguments to call the fake with.
+        FakeReturnValue(
+            std::function<TReturn (TArguments...)> fake,
+            std::tuple<TArguments...> arguments)
+            : _fake(std::move(fake))
+            , _arguments(std::move(arguments)) {
+        }
+
+        virtual TReturn getReturnValue() override {
+            // Forward the call to _fake.
+            return Apply::apply(_fake, std::move(_arguments));
         }
 };
 
@@ -189,70 +285,6 @@ class UnmockedCallException : public MockException {
             return "The call "
                 + callString
                 + " does not match any mocked case.";
-        }
-};
-
-}
-
-namespace IMock::Internal {
-
-/// Utility making it possible to call a callback using arguments contained in
-/// a tuple.
-class Apply {
-    private:
-        // A trick to statically produce a list of integers. The solution has
-        // been taken from: https://stackoverflow.com/a/7858971/6188897
-        template<int ...>
-        struct seq {
-        };
-
-        template<int N, int ...S>
-        struct gens : gens<N-1, N-1, S...> {
-        };
-
-        template<int ...S>
-        struct gens<0, S...>{
-            typedef seq<S...> type;
-        };
-
-        /// Calls the provided callback with the arguments in the provided
-        /// tuple.
-        ///
-        /// Also includes a "seq" making it possible to extract the arguments
-        /// from the tuple.
-        ///
-        /// @param callback The function to call.
-        /// @param arguments The arguments to call the callback with.
-        /// @return The return value from the callback.
-        template<int ...S, typename TReturn,
-            typename ...TArguments>
-        static TReturn applyWithSeq(
-            seq<S...>,
-            std::function<TReturn (TArguments...)> callback,
-            std::tuple<TArguments...> arguments) {
-            // Call callback with the extracted arguments.
-            return callback(std::move(std::get<S>(arguments))...);
-        }
-
-    public:
-        /// Apply is not supposed to be instantiated since it only contains
-        /// static methods.
-        Apply() = delete;
-
-        /// Calls the provided callback with the arguments in the provided
-        /// tuple.
-        ///
-        /// @param callback The function to call.
-        /// @param arguments The arguments to call the callback with.
-        /// @return The return value from the callback.
-        template<typename TReturn, typename ...TArguments>
-        static TReturn apply(
-            std::function<TReturn (TArguments...)> callback,
-            std::tuple<TArguments...> arguments) {
-            // Create a "gens" with the number of arguments.
-            return applyWithSeq(typename gens<sizeof...(TArguments)>::type(),
-                callback,
-                std::move(arguments));
         }
 };
 
@@ -1230,6 +1262,22 @@ class CaseMatchFactory {
             // Create and return a CaseMatch with a VoidReturnValue.
             return CaseMatch<void>(makeUnique<VoidReturnValue>());
         }
+
+        /// Creates a CaseMatch indicating a match has been made and handle the
+        /// match with a fake.
+        ///
+        /// @param returnValue The call's return value.
+        /// @return A CaseMatch indicating a match with the provided fake.
+        template <typename TReturn, typename ...TArguments>
+        static CaseMatch<TReturn> matchFake(
+            std::function<TReturn (TArguments...)> fake,
+            std::tuple<TArguments...> arguments) {
+            // Create and return a CaseMatch with the fake and the arguments.
+            return CaseMatch<TReturn>(
+                makeUnique<FakeReturnValue<TReturn, TArguments...>>(
+                    std::move(fake),
+                    std::move(arguments)));
+        }
 };
 
 }
@@ -1244,7 +1292,7 @@ class MockWithArgumentsCase : public ICase<TReturn, TArguments...> {
         std::tuple<TArguments...> _arguments;
 
         /// A callback to call if the arguments match.
-        std::function<CaseMatch<TReturn> (TArguments...)> _fake;
+        std::function<CaseMatch<TReturn> (std::tuple<TArguments...>)> _fake;
 
     public:
         /// Creates a MockWithArgumentsCase.
@@ -1253,7 +1301,7 @@ class MockWithArgumentsCase : public ICase<TReturn, TArguments...> {
         /// @param fake A callback to call if the arguments match.
         MockWithArgumentsCase(
             std::tuple<TArguments...> arguments,
-            std::function<CaseMatch<TReturn> (TArguments...)> fake)
+            std::function<CaseMatch<TReturn> (std::tuple<TArguments...>)> fake)
             : _arguments(std::move(arguments))
             , _fake(std::move(fake)) {
             }
@@ -1264,7 +1312,7 @@ class MockWithArgumentsCase : public ICase<TReturn, TArguments...> {
                 // Call _fake and return its return value if a match has been
                 // made. The arguments are moved to _fake as they will never be
                 // read again.
-                return Apply::apply(_fake, std::move(arguments));
+                return _fake(std::move(arguments));
             }
             else {
                 // Return a CaseMatch indicating no match has been made.
@@ -1337,8 +1385,9 @@ class MockWithArguments {
             std::tuple<TReturn> wrappedReturnValue = (returnValue);
 
             // Create a fake.
-            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake
-                = [wrappedReturnValue] (TArguments... arguments) {
+            std::function<Internal::CaseMatch<TReturn>
+                (std::tuple<TArguments...>)> fake
+                = [wrappedReturnValue] (std::tuple<TArguments...> arguments) {
                     // Return a CaseMatch containing the return value.
                     return Internal::CaseMatchFactory::match<TReturn>(
                         std::get<0>(wrappedReturnValue));
@@ -1359,8 +1408,9 @@ class MockWithArguments {
             typename std::enable_if<std::is_void<R>::value, R>::type* = nullptr>
         MockCaseCallCount returns() {
             // Create a fake.
-            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake
-                = [] (TArguments... arguments) {
+            std::function<Internal::CaseMatch<TReturn>
+                (std::tuple<TArguments...>)> fake
+                = [] (std::tuple<TArguments...> arguments) {
                     // Return a CaseMatch for void.
                     return Internal::CaseMatchFactory::matchVoid();
                 };
@@ -1369,7 +1419,21 @@ class MockWithArguments {
             return fakeGeneral(fake);
         }
 
-        // TODO: Add a method for adding a mock case with a fake.
+        /// Adds a fake handling the method call when called with the associated
+        /// arguments.
+        ///
+        /// @param fake A method to call when a match happens.
+        /// @return A MockCaseCallCount that can be queried about the number of
+        /// calls done to the added mock case.
+        MockCaseCallCount fake(std::function<TReturn (TArguments...)> fake) {
+            // Call fakeGeneral with a fake.
+            return fakeGeneral([fake](std::tuple<TArguments...> arguments) {
+                // Return a CaseMatch for the fake.
+                return Internal::CaseMatchFactory::matchFake(
+                    std::move(fake),
+                    std::move(arguments));
+            });
+        }
 
     private:
         /// Adds a mock case making calls to the associated method be forwarded
@@ -1379,7 +1443,8 @@ class MockWithArguments {
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
         MockCaseCallCount fakeGeneral(
-            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake) {
+            std::function<Internal::CaseMatch<TReturn>
+                (std::tuple<TArguments...>)> fake) {
             // Check if the instance already has been used.
             if(_used) {
                 // Throw a MockWithArgumentsUsedTwiceException since the
