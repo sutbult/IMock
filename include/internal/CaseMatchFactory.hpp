@@ -3,7 +3,7 @@
 #include <memory>
 
 #include <internal/CaseMatch.hpp>
-#include <internal/make_unique.hpp>
+#include <internal/makeUnique.hpp>
 
 namespace IMock::Internal {
 
@@ -31,7 +31,7 @@ class CaseMatchFactory {
         template <typename TReturn>
         static CaseMatch<TReturn> match(TReturn returnValue) {
             // Create and return a CaseMatch with the provided return value.
-            return CaseMatch<TReturn>(make_unique<NonVoidReturnValue<TReturn>>(
+            return CaseMatch<TReturn>(makeUnique<NonVoidReturnValue<TReturn>>(
                 std::move(returnValue)));
         }
 
@@ -41,7 +41,24 @@ class CaseMatchFactory {
         /// @return A CaseMatch indicating a match.
         static CaseMatch<void> matchVoid() {
             // Create and return a CaseMatch with a VoidReturnValue.
-            return CaseMatch<void>(make_unique<VoidReturnValue>());
+            return CaseMatch<void>(makeUnique<VoidReturnValue>());
+        }
+
+        /// Creates a CaseMatch indicating a match has been made and handle the
+        /// match with a fake.
+        ///
+        /// @param fake The fake to call.
+        /// @param arguments The arguments to call the fake with.
+        /// @return A CaseMatch indicating a match with the provided fake.
+        template <typename TReturn, typename ...TArguments>
+        static CaseMatch<TReturn> matchFake(
+            std::function<TReturn (TArguments...)> fake,
+            std::tuple<TArguments...> arguments) {
+            // Create and return a CaseMatch with the fake and the arguments.
+            return CaseMatch<TReturn>(
+                makeUnique<FakeReturnValue<TReturn, TArguments...>>(
+                    std::move(fake),
+                    std::move(arguments)));
         }
 };
 

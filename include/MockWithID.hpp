@@ -25,15 +25,19 @@ class MockWithID {
         /// method.
         ///
         /// @param method The method to add mock cases for.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         /// @return A MockWithMethod associated with the method.
         template <typename TReturn, typename ...TArguments>
         MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
-            TReturn (TInterface::*method)(TArguments...)) {
-            // Create and return a MockWithMethod with the InnerMock and the
-            // method.
+            TReturn (TInterface::*method)(TArguments...),
+            std::string methodString) {
+            // Create and return a MockWithMethod with the InnerMock,
+            // the method and the call string.
             return MockWithMethod<TInterface, id, TReturn, TArguments...>(
                 _mock,
-                method);
+                method,
+                std::move(methodString));
         }
 };
 

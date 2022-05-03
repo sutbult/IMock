@@ -1,6 +1,7 @@
 #pragma once
 
 #include <internal/InnerMock.hpp>
+#include <internal/MockWithMethodCase.hpp>
 #include <MockCaseID.hpp>
 #include <MockWithArguments.hpp>
 
@@ -17,16 +18,23 @@ class MockWithMethod {
         /// The method to add a mock case to.
         TReturn (TInterface::*_method)(TArguments...);
 
+        /// A string describing how a call is made to the method being mocked.
+        std::string _methodString;
+
     public:
         /// Creates a MockWithMethod.
         ///
         /// @param mock The InnerMock to add a mock case to.
         /// @param method The method to add a mock case to.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         MockWithMethod(
             Internal::InnerMock<TInterface>& mock,
-            TReturn (TInterface::*method)(TArguments...))
+            TReturn (TInterface::*method)(TArguments...),
+            std::string methodString)
             : _mock(mock)
-            , _method(std::move(method)) {
+            , _method(std::move(method))
+            , _methodString(std::move(methodString)) {
         }
 
         /// Creates a MockWithArguments used to add a mock case matching the
@@ -37,14 +45,31 @@ class MockWithMethod {
         MockWithArguments<TInterface, id, TReturn, TArguments...> with(
             TArguments... arguments) {
             // Create and return a MockWithArguments with the InnerMock,
-            // the method and the arguments.
+            // the method, the call string and the arguments.
             return MockWithArguments<TInterface, id, TReturn, TArguments...>(
                 _mock,
                 _method,
+                _methodString,
                 std::tuple<TArguments...>(std::move(arguments)...));
         }
 
-        // TODO: Add a method for adding a mock case with a fake.
+        /// Adds a fake handling the method call.
+        ///
+        /// @param fake A callback to call when the method is called.
+        /// @return A MockCaseCallCount that can be queried about the number of
+        /// calls done to the added mock case.
+        MockCaseCallCount fake(std::function<TReturn (TArguments...)> fake) {
+            // Create a MockWithMethodCase.
+            std::unique_ptr<Internal::ICase<TReturn, TArguments...>> mockCase
+                = Internal::makeUnique<Internal::MockWithMethodCase<
+                    TReturn, TArguments...>>(fake);
+
+            // Add the case to InnerMock.
+            return _mock.template addCase<id, TReturn, TArguments...>(
+                _method,
+                std::move(_methodString),
+                std::move(mockCase));
+        }
 };
 
 }

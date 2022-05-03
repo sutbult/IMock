@@ -28,10 +28,22 @@ TEST_CASE("can mock a basic interface", "[basic]") {
     }
 
     SECTION("mock add") {
+        // Generate a bool to have two configurations.
+        bool withReturns = GENERATE(true, false);
+
         // Mock add.
-        IMock::MockCaseCallCount mockCaseCallCount = when(mock, add)
-            .with(1, 1)
-            .returns(2);
+        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+            // Use returns if withReturns is true.
+            ? when(mock, add)
+                .with(1, 1)
+                .returns(2)
+
+            // Use fake if withReturns is false.
+            : when(mock, add)
+                .with(1, 1)
+                .fake([](int a, int b) {
+                    return a + b;
+                });
 
         SECTION("no calls have initially been made") {
             SECTION("verifyNeverCalled() does not throw any exception") {
@@ -84,9 +96,8 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             REQUIRE_THROWS_MATCHES(
                 mock.get().add(1, 2),
                 IMock::Exception::UnmockedCallException,
-                Catch::Message("A call was made to a method that has been "
-                    "mocked but the arguments does not match any mocked "
-                    "arguments."));
+                Catch::Message("The call mock.get().add(1, 2) does not match "
+                    "any mocked case."));
         }
 
         SECTION("call another method that has not been mocked") {
@@ -252,6 +263,133 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 " This is not possible since the arguments are moved when"
                 " adding a case."));
     }
+
+    SECTION("mock add with fake") {
+        // Mock add.
+        IMock::MockCaseCallCount mockCaseCallCount = when(mock, add)
+            .fake([](int a, int b) {
+                return a + b;
+            });
+
+        SECTION("call add") {
+            #define GENERATE_CASES GENERATE( \
+                std::tuple<int, int, int>(2, 2, 4), \
+                std::tuple<int, int, int>(2, 3, 5), \
+                std::tuple<int, int, int>(7, 7, 14), \
+                std::tuple<int, int, int>(100, 50, 150), \
+                std::tuple<int, int, int>(1000000, -600000, 400000), \
+                std::tuple<int, int, int>(INT32_MAX, INT32_MIN, -1));
+
+            // Generate a number of test cases.
+            std::tuple<int, int, int> addCase = GENERATE_CASES
+            
+            // Get the first term.
+            int a = std::get<0>(addCase);
+
+            // Get the second term.
+            int b = std::get<1>(addCase);
+
+            // Get the sum.
+            int sum = std::get<2>(addCase);
+
+            // Call add with a + b.
+            int result = mock.get().add(a, b);
+
+            SECTION("the result is correct") {
+                // Verify the result equals the sum.
+                REQUIRE(result == sum);
+            }
+
+            SECTION("the call count is one") {
+                // Call verifyCalledOnce and verify it does not throw an
+                // exception.
+                REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+            }
+
+            SECTION("call add again") {
+                // Generate a number of test term pairs.
+                std::tuple<int, int, int> secondAddCase = GENERATE_CASES
+                
+                // Get the first term.
+                int c = std::get<0>(secondAddCase);
+
+                // Get the second term.
+                int d = std::get<1>(secondAddCase);
+
+                // Get the sum.
+                int secondSum = std::get<2>(secondAddCase);
+
+                // Call add with c + d.
+                int secondResult = mock.get().add(c, d);
+
+                SECTION("the result is correct") {
+                    // Verify the result equals the sum.
+                    REQUIRE(secondResult == secondSum);
+                }
+
+                SECTION("the call count is one") {
+                    // Call verifyCallCount(2) and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCallCount(2));
+                }
+            }
+        }
+
+        SECTION("mock add again") {
+            // Mock add with other values.
+            IMock::MockCaseCallCount mockCaseCallCountSecond = when(mock, add)
+                .with(2, 2)
+                .returns(5);
+
+            SECTION("call add with the second mock") {
+                // The fake can handle 2 + 2 as seen above, but the mock case
+                // should be used since it was added later than the fake.
+
+                // Call add with the values of the second mock.
+                int result = mock.get().add(2, 2);
+
+                SECTION("the result is correct") {
+                    // Verify the result is 5.
+                    REQUIRE(result == 5);
+                }
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the first mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                }
+            }
+
+            SECTION("call add with the first mock") {
+                // Call add with the values of the first mock.
+                int result = mock.get().add(1, 1);
+
+                SECTION("the result is correct") {
+                    // Verify the result is 2.
+                    REQUIRE(result == 2);
+                }
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the second mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                        .verifyNeverCalled());
+                }
+            }
+        }
+    }
 }
 
 TEST_CASE("can mock an interface where every argument and return value is a "
@@ -374,10 +512,22 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
     }
 
     SECTION("mock getInt") {
+        // Generate a bool to have two configurations.
+        bool withReturns = GENERATE(true, false);
+
         // Mock getInt.
-        IMock::MockCaseCallCount mockCaseCallCount = when(mock, getInt)
-            .with()
-            .returns(1);
+        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+            // Use returns if withReturns is true.
+            ? when(mock, getInt)
+                .with()
+                .returns(1)
+
+            // Use fake if withReturns is false.
+            : when(mock, getInt)
+                .with()
+                .fake([]() {
+                    return 1;
+                });
 
         SECTION("no calls have initially been made") {
             // Call verifyNeverCalled and verify it does not throw an exception.
@@ -453,10 +603,21 @@ TEST_CASE("can mock an interface without any return value",
     }
 
     SECTION("mock setInt") {
+        // Generate a bool to have two configurations.
+        bool withReturns = GENERATE(true, false);
+
         // Mock setInt.
-        IMock::MockCaseCallCount mockCaseCallCount = when(mock, setInt)
-            .with(1)
-            .returns();
+        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+            // Use returns if withReturns is true.
+            ? when(mock, setInt)
+                .with(1)
+                .returns()
+
+            // Use fake if withReturns is false.
+            : when(mock, setInt)
+                .with(1)
+                .fake([](int i) {
+                });
 
         SECTION("no calls have initially been made") {
             // Call verifyNeverCalled and verify it does not throw an exception.
@@ -479,9 +640,8 @@ TEST_CASE("can mock an interface without any return value",
             REQUIRE_THROWS_MATCHES(
                 mock.get().setInt(2),
                 IMock::Exception::UnmockedCallException,
-                Catch::Message("A call was made to a method that has been "
-                    "mocked but the arguments does not match any mocked "
-                    "arguments."));
+                Catch::Message("The call mock.get().setInt(2) does not match "
+                    "any mocked case."));
         }
 
         SECTION("mock setInt again") {
@@ -542,7 +702,7 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
             ///
             /// @param value The value to held.
             NoCopy(int value)
-                : _value(IMock::Internal::make_unique<int>(std::move(value))) {
+                : _value(IMock::Internal::makeUnique<int>(std::move(value))) {
             }
 
             /// Gets the value.
@@ -569,6 +729,8 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
     class INoCopyArgument {
         public:
             virtual void setInt(NoCopy) = 0;
+            virtual NoCopy getInt() = 0;
+            virtual NoCopy id(NoCopy) = 0;
     };
 
     // Create a Mock of INoCopyArgument.
@@ -584,10 +746,21 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
     }
 
     SECTION("mock setInt") {
+        // Generate a bool to have two configurations.
+        bool withReturns = GENERATE(true, false);
+
         // Mock setInt.
-        IMock::MockCaseCallCount mockCaseCallCount = when(mock, setInt)
-            .with(NoCopy(1))
-            .returns();
+        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+            // Use returns if withReturns is true.
+            ? when(mock, setInt)
+                .with(NoCopy(1))
+                .returns()
+
+            // Use fake if withReturns is false.
+            : when(mock, setInt)
+                .with(NoCopy(1))
+                .fake([](NoCopy noCopy) {
+                });
 
         SECTION("no calls have initially been made") {
             // Call verifyNeverCalled and verify it does not throw an exception.
@@ -610,9 +783,8 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
             REQUIRE_THROWS_MATCHES(
                 mock.get().setInt(NoCopy(2)),
                 IMock::Exception::UnmockedCallException,
-                Catch::Message("A call was made to a method that has been "
-                    "mocked but the arguments does not match any mocked "
-                    "arguments."));
+                Catch::Message("The call mock.get().setInt(?) does not match "
+                    "any mocked case."));
         }
 
         SECTION("mock setInt again") {
@@ -640,6 +812,74 @@ TEST_CASE("can mock an interface with an argument that can't be copied",
             }
 
             SECTION("call add with the first mock") {
+                // Call setInt with the value of the first mock.
+                mock.get().setInt(NoCopy(1));
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the second mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                        .verifyNeverCalled());
+                }
+            }
+        }
+
+        SECTION("mock another method") {
+            // Generate a bool to have two configurations.
+            bool withGetInt = GENERATE(true, false);
+
+            // Mock id.
+            IMock::MockCaseCallCount mockCaseCallCountSecond = withGetInt
+                // Mock getInt if withGetInt is true.
+                ? when(mock, getInt)
+                    .with()
+                    .fake([]() {
+                        // Create a NoCopy and return it.
+                        return NoCopy(1);
+                    })
+
+                // Mock id if withGetInt is false.
+                : when(mock, id)
+                    .with(NoCopy(1))
+                    .fake([](NoCopy noCopy) {
+                        // Return the argument.
+                        return noCopy;
+                    });
+
+            SECTION("call the other method") {
+                // Call id.
+                NoCopy result = withGetInt
+                    // Call getInt if withGetInt is true.
+                    ? mock.get().getInt()
+
+                    // Call id if withGetInt is false.
+                    : mock.get().id(NoCopy(1));
+
+                SECTION("the result is correct") {
+                    // Verify the result is 1.
+                    REQUIRE(result.getValue() == 1);
+                }
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the first mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                }
+            }
+
+            SECTION("call setInt") {
                 // Call setInt with the value of the first mock.
                 mock.get().setInt(NoCopy(1));
 

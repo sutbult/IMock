@@ -9,8 +9,8 @@ namespace IMock::Internal {
 /// a tuple.
 class Apply {
     private:
-        // A trick to statically produce a list of integers. Solution taken
-        // from: https://stackoverflow.com/a/7858971/6188897
+        // A trick to statically produce a list of integers. The solution has
+        // been taken from: https://stackoverflow.com/a/7858971/6188897
         template<int ...>
         struct seq {
         };

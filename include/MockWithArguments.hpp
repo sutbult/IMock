@@ -7,7 +7,7 @@
 #include <internal/Apply.hpp>
 #include <internal/CaseMatchFactory.hpp>
 #include <internal/InnerMock.hpp>
-#include <internal/make_unique.hpp>
+#include <internal/makeUnique.hpp>
 #include <internal/MockWithArgumentsCase.hpp>
 #include <MockCaseCallCount.hpp>
 #include <MockCaseID.hpp>
@@ -31,18 +31,25 @@ class MockWithArguments {
         /// Describes if the instance already has been used.
         bool _used;
 
+        /// A string describing how a call is made to the method being mocked.
+        std::string _methodString;
+
     public:
         /// Creates a MockWithArguments.
         ///
         /// @param mock The InnerMock to add a mock case to.
         /// @param method The method to add a mock case to.
         /// @param arguments The arguments to match calls with.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         MockWithArguments(
             Internal::InnerMock<TInterface>& mock,
             TReturn (TInterface::*method)(TArguments...),
+            std::string methodString,
             std::tuple<TArguments...> arguments)
             : _mock(mock)
             , _method(std::move(method))
+            , _methodString(std::move(methodString))
             , _arguments(std::move(arguments))
             , _used(false) {
         }
@@ -67,8 +74,9 @@ class MockWithArguments {
             std::tuple<TReturn> wrappedReturnValue = (returnValue);
 
             // Create a fake.
-            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake
-                = [wrappedReturnValue] (TArguments... arguments) {
+            std::function<Internal::CaseMatch<TReturn>
+                (std::tuple<TArguments...>)> fake
+                = [wrappedReturnValue] (std::tuple<TArguments...> arguments) {
                     // Return a CaseMatch containing the return value.
                     return Internal::CaseMatchFactory::match<TReturn>(
                         std::get<0>(wrappedReturnValue));
@@ -89,8 +97,9 @@ class MockWithArguments {
             typename std::enable_if<std::is_void<R>::value, R>::type* = nullptr>
         MockCaseCallCount returns() {
             // Create a fake.
-            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake
-                = [] (TArguments... arguments) {
+            std::function<Internal::CaseMatch<TReturn>
+                (std::tuple<TArguments...>)> fake
+                = [] (std::tuple<TArguments...> arguments) {
                     // Return a CaseMatch for void.
                     return Internal::CaseMatchFactory::matchVoid();
                 };
@@ -99,7 +108,22 @@ class MockWithArguments {
             return fakeGeneral(fake);
         }
 
-        // TODO: Add a method for adding a mock case with a fake.
+        /// Adds a fake handling the method call when called with the associated
+        /// arguments.
+        ///
+        /// @param fake A callback to call when the method is called and a match
+        /// happens.
+        /// @return A MockCaseCallCount that can be queried about the number of
+        /// calls done to the added mock case.
+        MockCaseCallCount fake(std::function<TReturn (TArguments...)> fake) {
+            // Call fakeGeneral with a fake.
+            return fakeGeneral([fake](std::tuple<TArguments...> arguments) {
+                // Return a CaseMatch for the fake.
+                return Internal::CaseMatchFactory::matchFake(
+                    fake,
+                    std::move(arguments));
+            });
+        }
 
     private:
         /// Adds a mock case making calls to the associated method be forwarded
@@ -109,7 +133,8 @@ class MockWithArguments {
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
         MockCaseCallCount fakeGeneral(
-            std::function<Internal::CaseMatch<TReturn> (TArguments...)> fake) {
+            std::function<Internal::CaseMatch<TReturn>
+                (std::tuple<TArguments...>)> fake) {
             // Check if the instance already has been used.
             if(_used) {
                 // Throw a MockWithArgumentsUsedTwiceException since the
@@ -124,7 +149,7 @@ class MockWithArguments {
 
             // Create a MockWithArgumentsCase.
             std::unique_ptr<Internal::ICase<TReturn, TArguments...>> mockCase
-                = Internal::make_unique<
+                = Internal::makeUnique<
                 Internal::MockWithArgumentsCase<TReturn, TArguments...>>(
 
                 // Move the arguments, which means the instance cannot be used
@@ -135,6 +160,7 @@ class MockWithArguments {
             // Add the case to InnerMock.
             return _mock.template addCase<id, TReturn, TArguments...>(
                 _method,
+                std::move(_methodString),
                 std::move(mockCase));
         }
 };

@@ -1,11 +1,14 @@
 #pragma once
 
 #include <exception/UnmockedCallException.hpp>
+#include <internal/Apply.hpp>
 #include <internal/CaseMatch.hpp>
 #include <internal/ICase.hpp>
 #include <internal/IMockMethodNonGeneric.hpp>
+#include <internal/JoinStrings.hpp>
 #include <internal/MockCaseMutableCallCount.hpp>
-#include <internal/make_unique.hpp>
+#include <internal/makeUnique.hpp>
+#include <internal/ToString.hpp>
 #include <MockCaseCallCount.hpp>
 
 namespace IMock::Internal {
@@ -46,10 +49,17 @@ class MockMethod : public IMockMethodNonGeneric {
         /// The most recently mock case to have been added.
         std::unique_ptr<InnerMockCase> _topMockCase;
 
+        /// A string describing how a call is made to the method being mocked.
+        std::string _methodString;
+
     public:
         /// Creates a MockMethod without any mock cases.
-        MockMethod()
-            : _topMockCase(std::unique_ptr<InnerMockCase>(nullptr)) {
+        ///
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
+        MockMethod(std::string methodString)
+            : _topMockCase(std::unique_ptr<InnerMockCase>(nullptr))
+            , _methodString(std::move(methodString)) {
         }
 
         /// Destructs the MockMethod by deleting all InnerMockCase instances
@@ -82,7 +92,7 @@ class MockMethod : public IMockMethodNonGeneric {
                 = std::make_shared<MockCaseMutableCallCount>();
 
             // Create a InnerMockCase and assign it to _topMockCase.
-            _topMockCase = Internal::make_unique<InnerMockCase>(
+            _topMockCase = Internal::makeUnique<InnerMockCase>(
                 std::move(mockCase),
                 callCountPointer,
                 std::move(_topMockCase));
@@ -130,9 +140,39 @@ class MockMethod : public IMockMethodNonGeneric {
                 }
             }
 
-            // Throw an UnmockedCallException if no mock case matches the
-            // arguments.
-            throw Exception::UnmockedCallException();
+            // No mock case matches the arguments.
+
+            // Create a call string from the arguments.
+            std::string callString = getCallString(std::move(tupleArguments));
+
+            // Throw an UnmockedCallException.
+            throw Exception::UnmockedCallException(callString);
+        }
+
+    private:
+        /// Create a call string from the provided arguments.
+        ///
+        /// @param arguments The arguments of the call.
+        /// @return A string describing how the call was made.
+        std::string getCallString(std::tuple<TArguments...> arguments) {
+            // Convert the arguments to strings.
+            std::vector<std::string> stringArguments
+                = Apply::apply<std::vector<std::string>, TArguments...>(
+                    ToString::toStrings<TArguments...>,
+                    std::move(arguments));
+
+            // Join the argument strings.
+            std::string argumentsString = JoinStrings::joinStrings(
+                ", ",
+                std::move(stringArguments));
+
+            // Create a call string.
+            std::string callString
+                = _methodString
+                + "(" + argumentsString + ")";
+
+            // Return the call string.
+            return callString;
         }
 };
 
