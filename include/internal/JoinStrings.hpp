@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Joins vectors of strings using a provided delimiter.
 class JoinStrings {
@@ -41,4 +42,5 @@ class JoinStrings {
         }
 };
 
+}
 }

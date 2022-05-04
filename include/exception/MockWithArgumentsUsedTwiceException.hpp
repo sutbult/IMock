@@ -2,7 +2,8 @@
 
 #include <exception/MockException.hpp>
 
-namespace IMock::Exception {
+namespace IMock {
+namespace Exception {
 
 /// Thrown when a MockWithArguments is used twice, since the arguments are
 /// moved.
@@ -16,4 +17,5 @@ class MockWithArgumentsUsedTwiceException : public MockException {
         }
 };
 
+}
 }

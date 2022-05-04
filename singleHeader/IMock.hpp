@@ -18,7 +18,8 @@ typedef unsigned int MockCaseID;
 
 }
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Utility making it possible to call a callback using arguments contained in
 /// a tuple.
@@ -81,8 +82,10 @@ class Apply {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Interface for retrieving a return value.
 template <typename TReturn>
@@ -159,8 +162,10 @@ class FakeReturnValue : public IReturnValue<TReturn> {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Indicates if a call to a mock case resulted in a match with a return value
 /// or if it resulted in no match.
@@ -202,8 +207,10 @@ class CaseMatch {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Creates a unique_ptr.
 ///
@@ -232,8 +239,10 @@ std::unique_ptr<TPointer> makeUnique(TArguments&&... arguments)
 }
 
 }
+}
 
-namespace IMock::Exception {
+namespace IMock {
+namespace Exception {
 
 /// A class implementing std::exception thrown by IMock when something is wrong.
 class MockException : public std::exception {
@@ -259,8 +268,10 @@ class MockException : public std::exception {
 };
 
 }
+}
 
-namespace IMock::Exception {
+namespace IMock {
+namespace Exception {
 
 /// Thrown when a call was made to a method that has been mocked but the
 /// arguments does not match any mocked arguments.
@@ -289,8 +300,10 @@ class UnmockedCallException : public MockException {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Interface for a mocked case.
 template <typename TReturn, typename ...Arguments>
@@ -311,8 +324,10 @@ class ICase {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Interface for a method in a mock without any specified argument types or
 /// return value type.
@@ -324,8 +339,10 @@ class IMockMethodNonGeneric {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Joins vectors of strings using a provided delimiter.
 class JoinStrings {
@@ -364,8 +381,10 @@ class JoinStrings {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Contains a call count that can be increased and retrieved.
 class MockCaseMutableCallCount {
@@ -395,8 +414,10 @@ class MockCaseMutableCallCount {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Converts values to strings.
 class ToString {
@@ -479,8 +500,10 @@ class ToString {
 };
 
 }
+}
 
-namespace IMock::Exception {
+namespace IMock {
+namespace Exception {
 
 /// Thrown when a method is expected to have been called a certain number of
 /// times but actually was called a different number of times.
@@ -546,6 +569,7 @@ class WrongCallCountException : public MockException {
         }
 };
 
+}
 }
 
 namespace IMock {
@@ -618,7 +642,8 @@ class MockCaseCallCount {
 
 }
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// A mocked method containing a number of mock cases.
 template <typename TReturn, typename ...TArguments>
@@ -765,7 +790,8 @@ class MockMethod : public IMockMethodNonGeneric {
             // Convert the arguments to strings.
             std::vector<std::string> stringArguments
                 = Apply::apply<std::vector<std::string>, TArguments...>(
-                    ToString::toStrings<TArguments...>,
+                    std::function<std::vector<std::string> (TArguments...)>(
+                        ToString::toStrings<TArguments...>),
                     std::move(arguments));
 
             // Join the argument strings.
@@ -784,8 +810,10 @@ class MockMethod : public IMockMethodNonGeneric {
 };
 
 }
+}
 
-namespace IMock::Exception {
+namespace IMock {
+namespace Exception {
 
 /// Thrown when a method is called that has not been mocked.
 class UnknownCallException : public MockException {
@@ -798,8 +826,10 @@ class UnknownCallException : public MockException {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Contains a static function to call if a call has been made to a method
 /// without any mock cases.
@@ -818,8 +848,10 @@ class UnknownCall {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Specifies an method offset within a virtual table.
 typedef unsigned int VirtualTableOffset;
@@ -828,8 +860,10 @@ typedef unsigned int VirtualTableOffset;
 typedef VirtualTableOffset VirtualTableSize;
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 // Define a macro creating a virtual method returning its own virtual table
 // offset.
@@ -908,8 +942,10 @@ struct VirtualTableOffsetReference {
 #undef offset3
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Contains static methods used to get information about virtual table sizes
 /// and offsets within them.
@@ -964,8 +1000,10 @@ class VirtualTableOffsetContext {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Stores a raw virtual table for an interface.
 template <typename TInterface>
@@ -1008,8 +1046,10 @@ class VirtualTable {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Mocks a provided interface to perform wanted actions and return certain
 /// values when its virtual methods are called.
@@ -1207,8 +1247,10 @@ class InnerMock {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Utility to create CaseMatch instances.
 class CaseMatchFactory {
@@ -1266,8 +1308,10 @@ class CaseMatchFactory {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// An ICase always calling a provided callback.
 template <typename TReturn, typename ...TArguments>
@@ -1294,8 +1338,10 @@ class MockWithMethodCase : public ICase<TReturn, TArguments...> {
 };
 
 }
+}
 
-namespace IMock::Exception {
+namespace IMock {
+namespace Exception {
 
 /// Thrown when a MockWithArguments is used twice, since the arguments are
 /// moved.
@@ -1310,8 +1356,10 @@ class MockWithArgumentsUsedTwiceException : public MockException {
 };
 
 }
+}
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// An ICase checking if calls match provided arguments.
 template <typename TReturn, typename ...TArguments>
@@ -1350,6 +1398,7 @@ class MockWithArgumentsCase : public ICase<TReturn, TArguments...> {
         }
 };
 
+}
 }
 
 namespace IMock {

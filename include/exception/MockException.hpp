@@ -3,7 +3,8 @@
 #include <exception>
 #include <string>
 
-namespace IMock::Exception {
+namespace IMock {
+namespace Exception {
 
 /// A class implementing std::exception thrown by IMock when something is wrong.
 class MockException : public std::exception {
@@ -28,4 +29,5 @@ class MockException : public std::exception {
         }
 };
 
+}
 }

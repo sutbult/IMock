@@ -6,7 +6,8 @@
 #include <internal/CaseMatchFactory.hpp>
 #include <internal/ICase.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// An ICase checking if calls match provided arguments.
 template <typename TReturn, typename ...TArguments>
@@ -45,4 +46,5 @@ class MockWithArgumentsCase : public ICase<TReturn, TArguments...> {
         }
 };
 
+}
 }

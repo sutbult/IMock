@@ -5,7 +5,8 @@
 
 #include <internal/IReturnValue.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Indicates if a call to a mock case resulted in a match with a return value
 /// or if it resulted in no match.
@@ -46,4 +47,5 @@ class CaseMatch {
         }
 };
 
+}
 }

@@ -1,6 +1,7 @@
 #pragma once
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Contains a call count that can be increased and retrieved.
 class MockCaseMutableCallCount {
@@ -29,4 +30,5 @@ class MockCaseMutableCallCount {
         }
 };
 
+}
 }

@@ -11,7 +11,8 @@
 #include <internal/ToString.hpp>
 #include <MockCaseCallCount.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// A mocked method containing a number of mock cases.
 template <typename TReturn, typename ...TArguments>
@@ -158,7 +159,8 @@ class MockMethod : public IMockMethodNonGeneric {
             // Convert the arguments to strings.
             std::vector<std::string> stringArguments
                 = Apply::apply<std::vector<std::string>, TArguments...>(
-                    ToString::toStrings<TArguments...>,
+                    std::function<std::vector<std::string> (TArguments...)>(
+                        ToString::toStrings<TArguments...>),
                     std::move(arguments));
 
             // Join the argument strings.
@@ -176,4 +178,5 @@ class MockMethod : public IMockMethodNonGeneric {
         }
 };
 
+}
 }

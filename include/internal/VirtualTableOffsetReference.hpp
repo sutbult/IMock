@@ -2,7 +2,8 @@
 
 #include <internal/VirtualTableOffset.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 // Define a macro creating a virtual method returning its own virtual table
 // offset.
@@ -80,4 +81,5 @@ struct VirtualTableOffsetReference {
 #undef offset2
 #undef offset3
 
+}
 }

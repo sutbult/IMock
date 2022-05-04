@@ -7,7 +7,8 @@
 #include <internal/VirtualTableOffset.hpp>
 #include <internal/VirtualTableOffsetContext.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Stores a raw virtual table for an interface.
 template <typename TInterface>
@@ -49,4 +50,5 @@ class VirtualTable {
         }
 };
 
+}
 }

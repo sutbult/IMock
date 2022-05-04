@@ -3,7 +3,8 @@
 #include <internal/VirtualTableOffset.hpp>
 #include <internal/VirtualTableOffsetReference.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Contains static methods used to get information about virtual table sizes
 /// and offsets within them.
@@ -57,4 +58,5 @@ class VirtualTableOffsetContext {
         }
 };
 
+}
 }

@@ -2,7 +2,8 @@
 
 #include <exception/MockException.hpp>
 
-namespace IMock::Exception {
+namespace IMock {
+namespace Exception {
 
 /// Thrown when a call was made to a method that has been mocked but the
 /// arguments does not match any mocked arguments.
@@ -30,4 +31,5 @@ class UnmockedCallException : public MockException {
         }
 };
 
+}
 }

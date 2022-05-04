@@ -2,7 +2,8 @@
 
 #include <exception/MockException.hpp>
 
-namespace IMock::Exception {
+namespace IMock {
+namespace Exception {
 
 /// Thrown when a method is called that has not been mocked.
 class UnknownCallException : public MockException {
@@ -14,4 +15,5 @@ class UnknownCallException : public MockException {
         }
 };
 
+}
 }

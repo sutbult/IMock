@@ -8,7 +8,8 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt update && apt install -y \
     build-essential \
     cmake \
-    lcov
+    lcov \
+    clang
 
 # Create a directory for the repository.
 RUN mkdir /IMock

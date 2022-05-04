@@ -2,7 +2,8 @@
 
 #include <memory>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Creates a unique_ptr.
 ///
@@ -30,4 +31,5 @@ std::unique_ptr<TPointer> makeUnique(TArguments&&... arguments)
     #endif
 }
 
+}
 }

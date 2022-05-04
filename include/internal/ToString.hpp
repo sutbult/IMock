@@ -6,7 +6,8 @@
 #include <utility>
 #include <vector>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Converts values to strings.
 class ToString {
@@ -88,4 +89,5 @@ class ToString {
         }
 };
 
+}
 }

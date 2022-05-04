@@ -4,7 +4,8 @@
 
 #include <internal/CaseMatch.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Interface for a mocked case.
 template <typename TReturn, typename ...Arguments>
@@ -24,4 +25,5 @@ class ICase {
             = 0;
 };
 
+}
 }

@@ -3,7 +3,8 @@
 #include <tuple>
 #include <functional>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Utility making it possible to call a callback using arguments contained in
 /// a tuple.
@@ -65,4 +66,5 @@ class Apply {
         }
 };
 
+}
 }

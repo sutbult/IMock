@@ -4,7 +4,8 @@
 
 #include <exception/MockException.hpp>
 
-namespace IMock::Exception {
+namespace IMock {
+namespace Exception {
 
 /// Thrown when a method is expected to have been called a certain number of
 /// times but actually was called a different number of times.
@@ -70,4 +71,5 @@ class WrongCallCountException : public MockException {
         }
 };
 
+}
 }

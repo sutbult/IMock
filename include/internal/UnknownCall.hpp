@@ -2,7 +2,8 @@
 
 #include <exception/UnknownCallException.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Contains a static function to call if a call has been made to a method
 /// without any mock cases.
@@ -20,4 +21,5 @@ class UnknownCall {
         }
 };
 
+}
 }

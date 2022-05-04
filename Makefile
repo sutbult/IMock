@@ -57,10 +57,10 @@ merge-headers: build-merge-headers
 	mkdir -p singleHeader
 	build/mergeHeaders include IMock.hpp singleHeader/IMock.hpp
 
-# Builds a test executable using the single header using a specified C++
-# version.
-build-with-single-header-version: merge-headers
-	g++ \
+# Builds a test executable using the single header using a specified C++ version
+# and a specified compiler.
+build-with-single-header-base: merge-headers
+	${compiler} \
 		-std=${cppVersionStd} \
 		-g \
 		-Itest/include \
@@ -68,34 +68,74 @@ build-with-single-header-version: merge-headers
 		test/src/IMock.cpp \
 		test/src/IMockSecondary.cpp \
 		test/src/main.cpp \
-		-o build/IMockTestWithSingleHeader${cppVersionOut}
+		-lstdc++ \
+		-lm \
+		-o build/IMockTestWithSingleHeader${fileName}
 
-# Builds a test executable using the single header using C++11.
-build-with-single-header:
-	$(MAKE) build-with-single-header-version \
+# Builds a test executable using the single header using a specified C++ version
+# and gcc.
+build-with-single-header-version-gcc:
+	$(MAKE) build-with-single-header-base \
+		compiler=g++ \
+		fileName="${cppVersionOut}Gcc"
+
+# Builds a test executable using the single header using a specified C++ version
+# and clang.
+build-with-single-header-version-clang:
+	$(MAKE) build-with-single-header-base \
+		compiler=clang \
+		fileName="${cppVersionOut}Clang"
+
+# Builds a test executable using the single header using C++11 and gcc.
+build-with-single-header-cpp11-gcc:
+	$(MAKE) build-with-single-header-version-gcc \
 		cppVersionStd=c++11 \
-		cppVersionOut=CPP11
+		cppVersionOut=Cpp11
 
-# Builds a test executable using the single header using C++14.
-build-with-single-header-cpp14:
-	$(MAKE) build-with-single-header-version \
+# Builds a test executable using the single header using C++14 and gcc.
+build-with-single-header-cpp14-gcc:
+	$(MAKE) build-with-single-header-version-gcc \
 		cppVersionStd=c++14 \
-		cppVersionOut=CPP14
+		cppVersionOut=Cpp14
+
+# Builds a test executable using the single header using C++11 and clang.
+build-with-single-header-cpp11-clang:
+	$(MAKE) build-with-single-header-version-clang \
+		cppVersionStd=c++11 \
+		cppVersionOut=Cpp11
+
+# Builds a test executable using the single header using C++14 and clang.
+build-with-single-header-cpp14-clang:
+	$(MAKE) build-with-single-header-version-clang \
+		cppVersionStd=c++14 \
+		cppVersionOut=Cpp14
 
 # Builds a test executable using the single header and runs its automatic tests
-# using C++11.
-test-with-single-header: build-with-single-header
-	bash -c "time build/IMockTestWithSingleHeaderCPP11 ${filter}"
+# using C++11 and gcc.
+test-with-single-header-cpp11-gcc: build-with-single-header-cpp11-gcc
+	bash -c "time build/IMockTestWithSingleHeaderCpp11Gcc ${filter}"
 
 # Builds a test executable using the single header and runs its automatic tests
-# using C++14.
-test-with-single-header-cpp14: build-with-single-header-cpp14
-	bash -c "time build/IMockTestWithSingleHeaderCPP14 ${filter}"
+# using C++14 and gcc.
+test-with-single-header-cpp14-gcc: build-with-single-header-cpp14-gcc
+	bash -c "time build/IMockTestWithSingleHeaderCpp14Gcc ${filter}"
+
+# Builds a test executable using the single header and runs its automatic tests
+# using C++11 and clang.
+test-with-single-header-cpp11-clang: build-with-single-header-cpp11-clang
+	bash -c "time build/IMockTestWithSingleHeaderCpp11Clang ${filter}"
+
+# Builds a test executable using the single header and runs its automatic tests
+# using C++14 and clang.
+test-with-single-header-cpp14-clang: build-with-single-header-cpp14-clang
+	bash -c "time build/IMockTestWithSingleHeaderCpp14Clang ${filter}"
 
 # Runs all types of automatic tests.
 test-all: test \
-	test-with-single-header \
-	test-with-single-header-cpp14
+	test-with-single-header-cpp11-gcc \
+	test-with-single-header-cpp14-gcc \
+	test-with-single-header-cpp11-clang \
+	test-with-single-header-cpp14-clang
 
 # Builds the program inside a Docker container.
 docker-build:
@@ -108,16 +148,6 @@ docker-test: docker-build
 # Builds the program and runs the benchmarks inside a Docker container.
 docker-benchmark: docker-build
 	docker run -t imock make benchmark
-
-# Builds the program and runs the automatic tests using the single header
-# inside a Docker container using C++11.
-docker-test-with-single-header: docker-build
-	docker run -t imock make test-with-single-header
-
-# Builds the program and runs the automatic tests using the single header
-# inside a Docker container using C++14.
-docker-test-with-single-header-cpp14: docker-build
-	docker run -t imock make test-with-single-header-cpp14
 
 # Builds the program and runs all types of automatic tests inside a Docker
 # container.

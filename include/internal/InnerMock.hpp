@@ -9,7 +9,8 @@
 #include <internal/MockMethod.hpp>
 #include <internal/VirtualTable.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Mocks a provided interface to perform wanted actions and return certain
 /// values when its virtual methods are called.
@@ -206,4 +207,5 @@ class InnerMock {
         }
 };
 
+}
 }

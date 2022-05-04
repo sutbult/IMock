@@ -4,7 +4,8 @@
 
 #include <internal/Apply.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Interface for retrieving a return value.
 template <typename TReturn>
@@ -80,4 +81,5 @@ class FakeReturnValue : public IReturnValue<TReturn> {
         }
 };
 
+}
 }

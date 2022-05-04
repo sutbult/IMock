@@ -5,7 +5,8 @@
 #include <internal/CaseMatch.hpp>
 #include <internal/makeUnique.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// Utility to create CaseMatch instances.
 class CaseMatchFactory {
@@ -62,4 +63,5 @@ class CaseMatchFactory {
         }
 };
 
+}
 }

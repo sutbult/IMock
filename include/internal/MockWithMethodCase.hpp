@@ -6,7 +6,8 @@
 #include <internal/CaseMatchFactory.hpp>
 #include <internal/ICase.hpp>
 
-namespace IMock::Internal {
+namespace IMock {
+namespace Internal {
 
 /// An ICase always calling a provided callback.
 template <typename TReturn, typename ...TArguments>
@@ -32,4 +33,5 @@ class MockWithMethodCase : public ICase<TReturn, TArguments...> {
         }
 };
 
+}
 }
