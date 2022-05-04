@@ -1,5 +1,5 @@
-# Base the image on Ubuntu 20.04.
-FROM ubuntu:20.04
+# Base the image on Ubuntu 22.04.
+FROM ubuntu:22.04
 
 # Inform the operating system that no user interaction is possible.
 ENV DEBIAN_FRONTEND noninteractive
