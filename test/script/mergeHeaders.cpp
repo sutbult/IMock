@@ -14,6 +14,9 @@ using std::set;
 using std::string;
 using std::vector;
 
+/// Defines which characters counts as whitespaces.
+const std::string whitespaces = " \t\n\r";
+
 /// A class implementing std::exception that can be thrown by the program when
 /// deemed necessary.
 class Exception : public std::exception {
@@ -59,16 +62,32 @@ bool startsWith(string start, string target) {
     return match;
 }
 
+/// Checks if a target is empty or only contains whitespaces.
+///
+/// @param target The target string to be checked.
+/// @return True if target is empty or only contains whitespaces and false
+/// otherwise.
+bool isBlank(string target) {
+    // Get the first character that is not a whitespace.
+    int firstNonWhitespace = target.find_first_not_of(whitespaces);
+
+    // Check if any non-whitespace characters exist.
+    bool blank = firstNonWhitespace < 0;
+
+    // Return blank.
+    return blank;
+}
+
 /// Removes any initial or ending whitespaces.
 ///
 /// @param target The string to be trimmed.
 /// @return The target without any initial or ending whitespaces.
 string trim(string target) {
     // Get the first character that is not a whitespace.
-    int firstNonWhitespace = target.find_first_not_of(" \t\n\r");
+    int firstNonWhitespace = target.find_first_not_of(whitespaces);
     
     // Get the last character that is not a whitespace.
-    int lastNonWhitespace = target.find_last_not_of(" \t\n\r");
+    int lastNonWhitespace = target.find_last_not_of(whitespaces);
 
     // Check if any non-whitespace characters exist.
     if(firstNonWhitespace < 0 || lastNonWhitespace < 0) {
@@ -269,7 +288,7 @@ vector<string> removeDuplicateEmptyLines(vector<string>& lines) {
     // Process each line.
     for(string line : lines) {
         // Check if the line is empty.
-        if(line == "") {
+        if(isBlank(line)) {
             // Check if the previous line is also empty.
             if(!previousEmpty) {
                 // Push the line to result if the previous line is not empty.
