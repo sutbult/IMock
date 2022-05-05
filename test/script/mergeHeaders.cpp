@@ -59,23 +59,28 @@ bool startsWith(string start, string target) {
     return match;
 }
 
-/// Removes any initial whitespaces.
+/// Removes any initial or ending whitespaces.
 ///
 /// @param target The string to be trimmed.
-/// @return The target without any initial whitespaces.
-string trimStart(string target) {
+/// @return The target without any initial or ending whitespaces.
+string trim(string target) {
     // Get the first character that is not a whitespace.
     int firstNonWhitespace = target.find_first_not_of(" \t\n\r");
+    
+    // Get the last character that is not a whitespace.
+    int lastNonWhitespace = target.find_last_not_of(" \t\n\r");
 
     // Check if any non-whitespace characters exist.
-    if(firstNonWhitespace < 0) {
+    if(firstNonWhitespace < 0 || lastNonWhitespace < 0) {
         // Return an empty string if the string only contains whitespace
         // characters.
         return "";
     }
     else {
-        // Remove the initial whitespaces.
-        string trimmed = target.substr(firstNonWhitespace);
+        // Remove the initial and ending whitespaces.
+        string trimmed = target.substr(
+            firstNonWhitespace,
+            lastNonWhitespace + 1 - firstNonWhitespace);
 
         // Return the trimmed string.
         return trimmed;
@@ -188,7 +193,7 @@ void processHeader(
     // Process each line in the header.
     for(string line : lines) {
         // Trim the line.
-        string compareLine = trimStart(line);
+        string compareLine = trim(line);
 
         // Check if the line is #pragma once.
         if(compareLine == "#pragma once") {
