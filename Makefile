@@ -63,6 +63,7 @@ build-with-single-header-base: merge-headers
 	${compiler} \
 		-std=${cppVersionStd} \
 		-g \
+		-Wall \
 		-Itest/include \
 		-IsingleHeader \
 		test/src/IMock.cpp \

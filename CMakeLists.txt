@@ -3,6 +3,7 @@ project(IMock)
 
 add_definitions("-std=c++11")
 add_definitions("-g")
+add_definitions("-Wall")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/test/include)
