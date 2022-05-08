@@ -1414,14 +1414,14 @@ class MockWithArguments {
         /// The method to add a mock case to.
         TReturn (TInterface::*_method)(TArguments...);
 
+        /// A string describing how a call is made to the method being mocked.
+        std::string _methodString;
+
         /// The arguments to match calls with.
         std::tuple<TArguments...> _arguments;
 
         /// Describes if the instance already has been used.
         bool _used;
-
-        /// A string describing how a call is made to the method being mocked.
-        std::string _methodString;
 
     public:
         /// Creates a MockWithArguments.
