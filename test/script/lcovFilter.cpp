@@ -73,6 +73,14 @@ int getFirstValue(string start, string target) {
     return value;
 }
 
+int getSecondValue(string start, string target) {
+    int startLength = start.length();
+    int firstComma = target.find_first_of(',');
+    string stringLine = target.substr(firstComma + 1);
+    int value = stoi(stringLine);
+    return value;
+}
+
 vector<string> readFile(string path) {
     ifstream file(path);
     if(!file.is_open()) {
@@ -166,6 +174,17 @@ int main(int argc, char** argv) {
             std::stringstream out;
             out << "FNDA:" << totalCalls << "," << functionName;
             filteredCoverage.push_back(out.str());
+        }
+        else if(startsWithNoSpace("DA:", coverageLine)) {
+            int line = getFirstValue("DA:", coverageLine);
+            int covered = getSecondValue("DA:", coverageLine);
+
+            // Remove any uncovered lines starting with } as certain methods
+            // returning values sometimes (especially with Apple clang) reports
+            // these lines as uncovered.
+            if(covered != 0 || !startsWith("}", source[line - 1])) {
+                filteredCoverage.push_back(coverageLine);
+            }
         }
         else {
             filteredCoverage.push_back(coverageLine);
