@@ -1,38 +1,46 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <regex>
 #include <sstream>
-#include <vector>
 #include <string>
+#include <vector>
 
 using std::cout;
 using std::endl;
-using std::vector;
-using std::string;
+using std::exception;
+using std::get;
 using std::ifstream;
 using std::ofstream;
+using std::regex;
+using std::regex_constants::ECMAScript;
+using std::smatch;
+using std::sregex_iterator;
+using std::string;
 using std::stringstream;
+using std::tuple;
+using std::vector;
 
-/// A class implementing std::exception that can be thrown by the program when
+/// A class implementing exception that can be thrown by the program when
 /// deemed necessary.
-class Exception : public std::exception {
+class Exception : public exception {
     private:
         /// An explanation of what went wrong.
-        std::string message;
+        string message;
     
     public:
         /// Creates an Exception.
         ///
         /// @param message An explanation of what went wrong.
-        Exception(std::string message);
+        Exception(string message);
 
-        /// An override of std::exception::what() that returns the message.
+        /// An override of exception::what() that returns the message.
         ///
         /// @return A constant pointer to the message.
         const char* what() const noexcept override;
 };
 
 Exception::Exception(
-    std::string message)
+    string message)
     : message(message) {
 }
 
@@ -79,6 +87,85 @@ int getSecondValue(string start, string target) {
     string stringLine = target.substr(firstComma + 1);
     int value = stoi(stringLine);
     return value;
+}
+
+smatch getMatch(
+    const regex& regex,
+    const string& target,
+    int values) {
+    sregex_iterator begin(target.begin(), target.end(), regex);
+    sregex_iterator end;
+
+    int matches = distance(begin, end);
+
+    if(matches != 1) {
+        cout << matches << " " << values << endl;
+        throw Exception("The number of matches must be one. Target: " + target);
+    }
+
+    smatch match = *begin;
+
+    if(match.end() - match.begin() < values + 1) {
+        throw Exception("The number of values are too few. Target: " + target);
+    }
+
+    return match;
+}
+
+tuple<int, int, int> getThreeValues(
+    const regex& regex,
+    string target) {
+    smatch match = getMatch(regex, target, 3);
+
+    tuple<int, int, int> values = {
+        stoi(match[1]),
+        stoi(match[2]),
+        stoi(match[3]),
+    };
+
+    return values;
+}
+
+tuple<int, int, int, int> getFourValues(
+    const regex& regex,
+    string target) {
+    smatch match = getMatch(regex, target, 4);
+
+    tuple<int, int, int, int> values = {
+        stoi(match[1]),
+        stoi(match[2]),
+        stoi(match[3]),
+        stoi(match[4]),
+    };
+
+    return values;
+}
+
+tuple<int, int, int, int> getBRDAValues(string coverageLine) {
+    if(coverageLine.find_first_of('-') == string::npos) {
+        regex brdaRegex(
+            "BRDA:(\\d+),(\\d+),(\\d+),(\\d+)",
+            ECMAScript);
+
+        return getFourValues(brdaRegex, coverageLine);
+    }
+    else {
+        regex brdaRegex(
+            "BRDA:(\\d+),(\\d+),(\\d+),-",
+            ECMAScript);
+        
+        tuple<int, int, int> threeTuple
+            = getThreeValues(brdaRegex, coverageLine);
+
+        tuple<int, int, int, int> fourTuple = {
+            get<0>(threeTuple),
+            get<1>(threeTuple),
+            get<2>(threeTuple),
+            0,
+        };
+
+        return fourTuple;
+    }
 }
 
 vector<string> readFile(string path) {
@@ -133,11 +220,63 @@ int main(int argc, char** argv) {
             filteredCoverage.push_back(coverageLine);
         }
         else if(startsWithNoSpace("BRDA:", coverageLine)) {
-            int line = getFirstValue("BRDA:", coverageLine);
+            tuple<int, int, int, int> values = getBRDAValues(coverageLine);
+            int line = get<0>(values);
             string sourceLine = source[line - 1];
 
             if(startsWith("if(", sourceLine)) {
                 filteredCoverage.push_back(coverageLine);
+
+                int firstComma = coverageLine.find_first_of(',');
+                string signature = coverageLine.substr(0, firstComma);
+
+                bool squash = true;
+                int firstBranchHits = 0;
+                int secondBranchHits = 0;
+
+                while(squash) {
+                    string nextCoverageLine = coverage[i + 1];
+                    if(startsWithNoSpace(signature, nextCoverageLine)) {
+                        tuple<int, int, int, int> values
+                            = getBRDAValues(nextCoverageLine);
+
+                        int line = get<0>(values);
+                        int branch = get<2>(values);
+                        int hits = get<3>(values);
+
+                        bool onSecondBranch = branch % 2;
+                        if(onSecondBranch) {
+                            secondBranchHits += hits;
+                        }
+                        else {
+                            firstBranchHits += hits;
+                        }
+
+                        i++;
+                        coverageLine = coverage[i];
+                    }
+                    else {
+                        squash = false;
+                    }
+                }
+
+                stringstream firstBranchOut;
+                firstBranchOut
+                    << "BRDA:"
+                    << line
+                    << ",0,0,"
+                    << firstBranchHits;
+
+                filteredCoverage.push_back(firstBranchOut.str());
+
+                stringstream secondBranchOut;
+                secondBranchOut
+                    << "BRDA:"
+                    << line
+                    << ",0,1,"
+                    << secondBranchHits;
+
+                filteredCoverage.push_back(secondBranchOut.str());
             }
         }
         else if(startsWithNoSpace("FN:", coverageLine)) {
@@ -171,7 +310,7 @@ int main(int argc, char** argv) {
                 }
             }
 
-            std::stringstream out;
+            stringstream out;
             out << "FNDA:" << totalCalls << "," << functionName;
             filteredCoverage.push_back(out.str());
         }
