@@ -125,8 +125,11 @@ class MockMethod : public IMockMethodNonGeneric {
                 CaseMatch<TReturn> caseMatch = mockCase->_mockCase->matches(
                     tupleArguments);
 
+                // Get if a match happened.
+                bool match = caseMatch.isMatch();
+
                 // Check if a match happened.
-                if(caseMatch.isMatch()) {
+                if(match) {
                     // If so, increase the call count.
                     mockCase->_callCount->increase();
 
