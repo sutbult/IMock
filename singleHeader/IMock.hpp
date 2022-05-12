@@ -361,12 +361,15 @@ class JoinStrings {
             // Create an empty list to store the result.
             std::string result = "";
 
+            // Get the beginning of the string vector.
+            std::vector<std::string>::iterator begin = strings.begin();
+
             // Process each string.
-            for(std::vector<std::string>::iterator iterator = strings.begin();
+            for(std::vector<std::string>::iterator iterator = begin;
                 iterator < strings.end();
                 iterator++) {
                 // Check if the current string is a non-initial string.
-                if(iterator > strings.begin()) {
+                if(iterator > begin) {
                     // Append the delimiter if that's the case.
                     result.append(delimiter);
                 }
@@ -756,8 +759,11 @@ class MockMethod : public IMockMethodNonGeneric {
                 CaseMatch<TReturn> caseMatch = mockCase->_mockCase->matches(
                     tupleArguments);
 
+                // Get if a match happened.
+                bool match = caseMatch.isMatch();
+
                 // Check if a match happened.
-                if(caseMatch.isMatch()) {
+                if(match) {
                     // If so, increase the call count.
                     mockCase->_callCount->increase();
 
@@ -1414,14 +1420,14 @@ class MockWithArguments {
         /// The method to add a mock case to.
         TReturn (TInterface::*_method)(TArguments...);
 
+        /// A string describing how a call is made to the method being mocked.
+        std::string _methodString;
+
         /// The arguments to match calls with.
         std::tuple<TArguments...> _arguments;
 
         /// Describes if the instance already has been used.
         bool _used;
-
-        /// A string describing how a call is made to the method being mocked.
-        std::string _methodString;
 
     public:
         /// Creates a MockWithArguments.

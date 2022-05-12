@@ -19,6 +19,7 @@ build: init
 # Builds lcovFilter.
 build-lcov-filter: init
 	g++ \
+		-std=c++11 \
 		test/script/lcovFilter.cpp \
 		-o build/lcovFilter
 
@@ -49,6 +50,7 @@ benchmark: build
 # Builds mergeHeaders.
 build-merge-headers: init
 	g++ \
+		-std=c++11 \
 		test/script/mergeHeaders.cpp \
 		-o build/mergeHeaders
 
@@ -63,6 +65,7 @@ build-with-single-header-base: merge-headers
 	${compiler} \
 		-std=${cppVersionStd} \
 		-g \
+		-Wall \
 		-Itest/include \
 		-IsingleHeader \
 		test/src/IMock.cpp \
