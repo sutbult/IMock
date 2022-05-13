@@ -12,13 +12,6 @@
 #include <vector>
 
 namespace IMock {
-
-/// An ID used to distinguish mock cases from each other within a Mock.
-typedef unsigned int MockCaseID;
-
-}
-
-namespace IMock {
 namespace Internal {
 
 /// Utility making it possible to call a callback using arguments contained in
@@ -951,6 +944,15 @@ struct VirtualTableOffsetReference {
 }
 
 namespace IMock {
+
+/// A method on TInterface with the return type TReturn with the arguments
+/// ...TArguments.
+template <typename TInterface, typename TReturn, typename ...TArguments>
+using Method = TReturn (TInterface::*)(TArguments...);
+
+}
+
+namespace IMock {
 namespace Internal {
 
 /// Contains static methods used to get information about virtual table sizes
@@ -968,11 +970,15 @@ class VirtualTableOffsetContext {
         /// @return The virtual table offset of the method.
         template <typename TInterface, typename TReturn, typename ...TArguments>
         static VirtualTableOffset getVirtualTableOffset(
-            TReturn (TInterface::*method)(TArguments...)) {    
+            Method<TInterface, TReturn, TArguments...> method) {
+            // Declare a using for reference methods.
+            using ReferenceMethod
+                = Method<VirtualTableOffsetReference, VirtualTableOffset>;
+
             // Cast the provided method to a reference method with the same
             // offset in a reference class.
-            auto referenceMethod = reinterpret_cast<
-                VirtualTableOffset (VirtualTableOffsetReference::*)()>(method);
+            ReferenceMethod referenceMethod
+                = reinterpret_cast<ReferenceMethod>(method);
             
             // Create a VirtualTableOffsetReference to call the reference method
             // on.
@@ -1055,6 +1061,13 @@ class VirtualTable {
 }
 
 namespace IMock {
+
+/// An ID used to distinguish mock cases from each other within a Mock.
+typedef unsigned int MockCaseID;
+
+}
+
+namespace IMock {
 namespace Internal {
 
 /// Mocks a provided interface to perform wanted actions and return certain
@@ -1131,7 +1144,7 @@ class InnerMock {
         /// calls done to the added mock case.
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Forward the call to addCaseWithOnCall.
@@ -1158,7 +1171,7 @@ class InnerMock {
         MockCaseCallCount addCaseWithOnCall(
             MockCaseID id,
             TReturn (*onCall)(MockFake*, TArguments...),
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Check if a virtual table offset has been stored in
@@ -1418,7 +1431,7 @@ class MockWithArguments {
         Internal::InnerMock<TInterface>& _mock;
 
         /// The method to add a mock case to.
-        TReturn (TInterface::*_method)(TArguments...);
+        Method<TInterface, TReturn, TArguments...> _method;
 
         /// A string describing how a call is made to the method being mocked.
         std::string _methodString;
@@ -1439,7 +1452,7 @@ class MockWithArguments {
         /// method being mocked.
         MockWithArguments(
             Internal::InnerMock<TInterface>& mock,
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString,
             std::tuple<TArguments...> arguments)
             : _mock(mock)
@@ -1573,7 +1586,7 @@ class MockWithMethod {
         Internal::InnerMock<TInterface>& _mock;
 
         /// The method to add a mock case to.
-        TReturn (TInterface::*_method)(TArguments...);
+        Method<TInterface, TReturn, TArguments...> _method;
 
         /// A string describing how a call is made to the method being mocked.
         std::string _methodString;
@@ -1587,7 +1600,7 @@ class MockWithMethod {
         /// method being mocked.
         MockWithMethod(
             Internal::InnerMock<TInterface>& mock,
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString)
             : _mock(mock)
             , _method(std::move(method))
@@ -1657,7 +1670,7 @@ class MockWithID {
         /// @return A MockWithMethod associated with the method.
         template <typename TReturn, typename ...TArguments>
         MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString) {
             // Create and return a MockWithMethod with the InnerMock,
             // the method and the call string.

@@ -2,6 +2,7 @@
 
 #include <internal/InnerMock.hpp>
 #include <internal/MockWithMethodCase.hpp>
+#include <Method.hpp>
 #include <MockCaseID.hpp>
 #include <MockWithArguments.hpp>
 
@@ -16,7 +17,7 @@ class MockWithMethod {
         Internal::InnerMock<TInterface>& _mock;
 
         /// The method to add a mock case to.
-        TReturn (TInterface::*_method)(TArguments...);
+        Method<TInterface, TReturn, TArguments...> _method;
 
         /// A string describing how a call is made to the method being mocked.
         std::string _methodString;
@@ -30,7 +31,7 @@ class MockWithMethod {
         /// method being mocked.
         MockWithMethod(
             Internal::InnerMock<TInterface>& mock,
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString)
             : _mock(mock)
             , _method(std::move(method))

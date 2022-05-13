@@ -3,11 +3,12 @@
 #include <functional>
 #include <map>
 
-#include <MockCaseID.hpp>
 #include <internal/CaseMatch.hpp>
 #include <internal/makeUnique.hpp>
 #include <internal/MockMethod.hpp>
 #include <internal/VirtualTable.hpp>
+#include <Method.hpp>
+#include <MockCaseID.hpp>
 
 namespace IMock {
 namespace Internal {
@@ -86,7 +87,7 @@ class InnerMock {
         /// calls done to the added mock case.
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Forward the call to addCaseWithOnCall.
@@ -113,7 +114,7 @@ class InnerMock {
         MockCaseCallCount addCaseWithOnCall(
             MockCaseID id,
             TReturn (*onCall)(MockFake*, TArguments...),
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Check if a virtual table offset has been stored in

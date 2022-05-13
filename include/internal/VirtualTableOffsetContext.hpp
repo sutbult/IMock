@@ -2,6 +2,7 @@
 
 #include <internal/VirtualTableOffset.hpp>
 #include <internal/VirtualTableOffsetReference.hpp>
+#include <Method.hpp>
 
 namespace IMock {
 namespace Internal {
@@ -21,11 +22,15 @@ class VirtualTableOffsetContext {
         /// @return The virtual table offset of the method.
         template <typename TInterface, typename TReturn, typename ...TArguments>
         static VirtualTableOffset getVirtualTableOffset(
-            TReturn (TInterface::*method)(TArguments...)) {    
+            Method<TInterface, TReturn, TArguments...> method) {
+            // Declare a using for reference methods.
+            using ReferenceMethod
+                = Method<VirtualTableOffsetReference, VirtualTableOffset>;
+
             // Cast the provided method to a reference method with the same
             // offset in a reference class.
-            auto referenceMethod = reinterpret_cast<
-                VirtualTableOffset (VirtualTableOffsetReference::*)()>(method);
+            ReferenceMethod referenceMethod
+                = reinterpret_cast<ReferenceMethod>(method);
             
             // Create a VirtualTableOffsetReference to call the reference method
             // on.
