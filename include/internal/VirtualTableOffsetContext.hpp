@@ -10,6 +10,15 @@ namespace Internal {
 /// Contains static methods used to get information about virtual table sizes
 /// and offsets within them.
 class VirtualTableOffsetContext {
+    private:
+        /// An interface inheriting the provided interface.
+        template <typename TInterface>
+        class DerivedInterface : public TInterface {
+            public:
+                /// This method will come after any other methods.
+                virtual void lastMethod() = 0;
+        };
+
     public:
         /// VirtualTableOffsetContext is not supposed to be instantiated since
         /// it only contains static methods.
@@ -46,17 +55,10 @@ class VirtualTableOffsetContext {
         /// @return The size of the virtual table of the interface.
         template <typename TInterface>
         static VirtualTableSize getVirtualTableSize() {
-            // Create an interface inheriting the provided interface.
-            class DerivedInterface : public TInterface {
-                public:
-                    /// This method will come after any other methods.
-                    virtual void lastMethod() = 0;
-            };
-
             // Get the virtual table offset of the last method, which will be
             // the size of the provided interface's virtual table.
             VirtualTableOffset virtualTableSize = getVirtualTableOffset(
-                &DerivedInterface::lastMethod);
+                &DerivedInterface<TInterface>::lastMethod);
 
             // Return the virtual table size.
             return virtualTableSize;
