@@ -8,6 +8,9 @@ namespace Internal {
 /// @param source The value to cast from.
 /// @return The casted value.
 template <typename TTarget, typename TSource>
+#if defined(__GNUG__) && !defined(__clang__)
+[[gnu::optimize("no-devirtualize")]]
+#endif
 TTarget union_cast(TSource source) {
     // Create a union with a member each for the source and the target.
     union
