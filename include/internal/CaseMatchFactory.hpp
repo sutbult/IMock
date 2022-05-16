@@ -16,6 +16,7 @@ class CaseMatchFactory {
         CaseMatchFactory() = delete;
 
         /// Creates a CaseMatch indicating no match has been made.
+        /// @tparam TReturn The return type of the mocked method.
         template <typename TReturn>
         static CaseMatch<TReturn> noMatch() {
             /// Create and return a CaseMatch without a return value.
@@ -29,6 +30,7 @@ class CaseMatchFactory {
         /// @param returnValue The call's return value.
         /// @return A CaseMatch indicating a match with the provided return
         /// value.
+        /// @tparam TReturn The return type of the mocked method.
         template <typename TReturn>
         static CaseMatch<TReturn> match(TReturn returnValue) {
             // Create and return a CaseMatch with the provided return value.
@@ -51,6 +53,8 @@ class CaseMatchFactory {
         /// @param fake The fake to call.
         /// @param arguments The arguments to call the fake with.
         /// @return A CaseMatch indicating a match with the provided fake.
+        /// @tparam TReturn The return type of the mocked method.
+        /// @tparam TArguments The types of the arguments to the method.
         template <typename TReturn, typename ...TArguments>
         static CaseMatch<TReturn> matchFake(
             std::function<TReturn (TArguments...)> fake,

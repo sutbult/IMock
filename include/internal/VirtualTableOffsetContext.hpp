@@ -12,6 +12,8 @@ namespace Internal {
 class VirtualTableOffsetContext {
     private:
         /// An interface inheriting the provided interface.
+        ///
+        /// @tparam TInterface The interface to inherit from.
         template <typename TInterface>
         class DerivedInterface : public TInterface {
             public:
@@ -29,6 +31,8 @@ class VirtualTableOffsetContext {
         ///
         /// @param method The method to look up.
         /// @return The virtual table offset of the method.
+        /// @tparam TInterface The type of interface to get the virtual table
+        /// offset from.
         template <typename TInterface, typename TReturn, typename ...TArguments>
         static VirtualTableOffset getVirtualTableOffset(
             Method<TInterface, TReturn, TArguments...> method) {
@@ -53,6 +57,8 @@ class VirtualTableOffsetContext {
         /// Gets the size of the virtual table of an interface.
         ///
         /// @return The size of the virtual table of the interface.
+        /// @tparam TInterface The type of interface to get the virtual table
+        /// size of.
         template <typename TInterface>
         static VirtualTableSize getVirtualTableSize() {
             // Get the virtual table offset of the last method, which will be

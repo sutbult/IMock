@@ -10,6 +10,7 @@ namespace Internal {
 
 /// Indicates if a call to a mock case resulted in a match with a return value
 /// or if it resulted in no match.
+/// @tparam TReturn The return type of the mocked method.
 template <typename TReturn>
 class CaseMatch {
     private:

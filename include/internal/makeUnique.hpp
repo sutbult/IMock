@@ -12,6 +12,9 @@ namespace Internal {
 ///
 /// @param arguments Arguments used to create the contained value.
 /// @return A created unique_ptr.
+/// @tparam TPointer The type of contained value to create.
+/// @tparam TArguments The types of the arguments used to create the contained
+/// value.
 template<typename TPointer, typename... TArguments>
 std::unique_ptr<TPointer> makeUnique(TArguments&&... arguments)
 {

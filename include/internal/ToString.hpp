@@ -15,6 +15,9 @@ class ToString {
         // A trick to see if two types can use the insertion operator.
         // The solution has been taken from:
         // https://stackoverflow.com/a/22759544/6188897
+        ///
+        /// @tparam S The stream to stream to.
+        /// @tparam T The object to be streamed.
         template<typename S, typename T>
         class is_streamable
         {
@@ -42,6 +45,7 @@ class ToString {
         ///
         /// @param value The value to be converted.
         /// @return A string representation of the value.
+        /// @tparam TValue The value to be converted to a string.
         template <typename TValue>
         static std::string toString(
             typename std::enable_if<
@@ -63,6 +67,7 @@ class ToString {
         ///
         /// @param value The value to be converted.
         /// @return A string representation of the value.
+        /// @tparam TValue The value to be converted to a string.
         template <typename TValue>
         static std::string toString(
             typename std::enable_if<
@@ -77,6 +82,7 @@ class ToString {
         ///
         /// @param values The values to be converted.
         /// @return String representations of the values.
+        /// @tparam TValue The values to be converted to strings.
         template <typename ...TValue>
         static std::vector<std::string> toStrings(TValue... values) {
             // Call toString for each value.

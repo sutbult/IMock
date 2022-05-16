@@ -8,6 +8,8 @@ namespace IMock {
 namespace Internal {
 
 /// Interface for retrieving a return value.
+///
+/// @tparam TReturn The return type of the mocked method.
 template <typename TReturn>
 class IReturnValue {
     public:
@@ -32,6 +34,8 @@ class VoidReturnValue : public IReturnValue<void> {
 };
 
 /// Implements IReturnValue to make getReturnValue return the provided value.
+///
+/// @tparam TReturn The return type of the mocked method.
 template <typename TReturn>
 class NonVoidReturnValue : public IReturnValue<TReturn> {
     private:
@@ -54,6 +58,9 @@ class NonVoidReturnValue : public IReturnValue<TReturn> {
 
 /// Implements FakeReturnValue to make getReturnValue call the provided fake
 /// with the provided arguments and return its return value.
+///
+/// @tparam TReturn The return type of the mocked method.
+/// @tparam TArguments The types of the arguments of the mocked method.
 template <typename TReturn, typename ...TArguments>
 class FakeReturnValue : public IReturnValue<TReturn> {
     private:

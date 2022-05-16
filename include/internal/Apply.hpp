@@ -10,6 +10,7 @@ namespace Internal {
 /// a tuple.
 class Apply {
     private:
+        //! @cond Doxygen_Suppress
         // A trick to statically produce a list of integers. The solution has
         // been taken from: https://stackoverflow.com/a/7858971/6188897
         template<int ...>
@@ -24,6 +25,7 @@ class Apply {
         struct gens<0, S...>{
             typedef seq<S...> type;
         };
+        //! @endcond
 
         /// Calls the provided callback with the arguments in the provided
         /// tuple.
@@ -34,6 +36,9 @@ class Apply {
         /// @param callback The function to call.
         /// @param arguments The arguments to call the callback with.
         /// @return The return value from the callback.
+        /// @tparam A counter used to extract arguments.
+        /// @tparam TReturn The return type of the callback.
+        /// @tparam TArguments The types of the arguments of the callback.
         template<int ...S, typename TReturn,
             typename ...TArguments>
         static TReturn applyWithSeq(
@@ -55,6 +60,8 @@ class Apply {
         /// @param callback The function to call.
         /// @param arguments The arguments to call the callback with.
         /// @return The return value from the callback.
+        /// @tparam TReturn The return type of the callback.
+        /// @tparam TArguments The types of the arguments of the callback.
         template<typename TReturn, typename ...TArguments>
         static TReturn apply(
             std::function<TReturn (TArguments...)> callback,

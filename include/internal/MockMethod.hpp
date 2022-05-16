@@ -15,6 +15,9 @@ namespace IMock {
 namespace Internal {
 
 /// A mocked method containing a number of mock cases.
+///
+/// @tparam TReturn The return type of the mocked method.
+/// @tparam TArguments The types of the arguments of the mocked method.
 template <typename TReturn, typename ...TArguments>
 class MockMethod : public IMockMethodNonGeneric {
     private:

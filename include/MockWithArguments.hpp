@@ -16,6 +16,11 @@
 namespace IMock {
 
 /// A Mock with an associated method and arguments to add a mock case for.
+///
+/// @tparam TInterface The interface that the mocked method belongs to.
+/// @tparam id The MockWithID used to identify the mock case.
+/// @tparam TReturn The return type of the method.
+/// @tparam TArguments The types of the arguments to the method.
 template <typename TInterface, MockCaseID id, typename TReturn,
     typename ...TArguments>
 class MockWithArguments {
@@ -66,6 +71,8 @@ class MockWithArguments {
         /// @param returnValue The value to return when a match happens.
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
+        /// @tparam R The return type of the method as infered from TReturn.
+        /// Do not override it.
         template<typename R = TReturn>
         MockCaseCallCount returns(
             typename std::enable_if<!std::is_void<R>::value, TReturn>::type
@@ -94,6 +101,8 @@ class MockWithArguments {
         ///
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
+        /// @tparam R The return type of the method as infered from TReturn.
+        /// Do not override it.
         template<typename R = TReturn,
             typename std::enable_if<std::is_void<R>::value, R>::type* = nullptr>
         MockCaseCallCount returns() {
