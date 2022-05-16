@@ -16,6 +16,8 @@ namespace IMock {
 /// Normally, the compiler fills this buffer. However, IMock instead creates an
 /// object with a pointer to a buffer filled with custom methods that can be
 /// mocked or faked.
+///
+/// @tparam TInterface The type of interface to be mocked.
 template <typename TInterface>
 class Mock {
     private:
@@ -34,6 +36,7 @@ class Mock {
         /// The MockCaseID must differ from other mock cases used with the same
         /// Mock.
         /// @return A MockWithID associated with the MockCaseID.
+        /// @tparam id The MockWithID used to identify the mock case to add.
         template <MockCaseID id>
         MockWithID<TInterface, id> withCounter() {
             // Create an return a MockWithID with _innerMock.

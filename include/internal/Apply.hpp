@@ -36,6 +36,9 @@ class Apply {
         /// @param callback The function to call.
         /// @param arguments The arguments to call the callback with.
         /// @return The return value from the callback.
+        /// @tparam A counter used to extract arguments.
+        /// @tparam TReturn The return type of the callback.
+        /// @tparam TArguments The types of the arguments of the callback.
         template<int ...S, typename TReturn,
             typename ...TArguments>
         static TReturn applyWithSeq(
@@ -57,6 +60,8 @@ class Apply {
         /// @param callback The function to call.
         /// @param arguments The arguments to call the callback with.
         /// @return The return value from the callback.
+        /// @tparam TReturn The return type of the callback.
+        /// @tparam TArguments The types of the arguments of the callback.
         template<typename TReturn, typename ...TArguments>
         static TReturn apply(
             std::function<TReturn (TArguments...)> callback,

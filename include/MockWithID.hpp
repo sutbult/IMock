@@ -8,6 +8,9 @@
 namespace IMock {
 
 /// A Mock with an associated MockCaseID used to add a mock case.
+///
+/// @tparam TInterface The interface that the mocked method belongs to.
+/// @tparam id The MockWithID used to identify the mock case to add.
 template <typename TInterface, MockCaseID id>
 class MockWithID {
     private:
@@ -29,6 +32,8 @@ class MockWithID {
         /// @param methodString A string describing how a call is made to the
         /// method being mocked.
         /// @return A MockWithMethod associated with the method.
+        /// @tparam TReturn The return type of the method.
+        /// @tparam TArguments The types of the arguments to the method.
         template <typename TReturn, typename ...TArguments>
         MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
             Method<TInterface, TReturn, TArguments...> method,

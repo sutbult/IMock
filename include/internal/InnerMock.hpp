@@ -16,6 +16,8 @@ namespace Internal {
 
 /// Mocks a provided interface to perform wanted actions and return certain
 /// values when its virtual methods are called.
+///
+/// @tparam TInterface The type of interface to be mocked.
 template <typename TInterface>
 class InnerMock {
     private:
@@ -57,6 +59,13 @@ class InnerMock {
                 /// @return The return value from the first matching mock case.
                 /// @throws Throws an UnmockedCallException if the arguments
                 /// does not match any mock case.
+                ///
+                /// @return A MockWithID associated with the MockCaseID.
+                /// @tparam id The MockWithID used to identify the mock case
+                /// that first added a mock case to the method.
+                /// @tparam TReturn The return type of the mocked method.
+                /// @tparam TArguments The types of the arguments of the mocked
+                /// method.
                 template <MockCaseID id, typename TReturn,
                     typename ...TArguments>
                 TReturn onCall(TArguments... arguments) {
@@ -103,6 +112,10 @@ class InnerMock {
         /// @param mockCase The mock case to add.
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
+        /// @tparam id The MockWithID used to identify the mock case to add.
+        /// @tparam TReturn The return type of the method being mocked.
+        /// @tparam TArguments The types of the arguments to the method being
+        /// mocked.
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
             Method<TInterface, TReturn, TArguments...> method,
@@ -130,6 +143,9 @@ class InnerMock {
         /// @param mockCase The mock case to add.
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
+        /// @tparam TReturn The return type of the method being mocked.
+        /// @tparam TArguments The types of the arguments to the method being
+        /// mocked.
         template <typename TReturn, typename ...TArguments>
         MockCaseCallCount addCaseWithOnCall(
             MockCaseID id,
@@ -178,6 +194,10 @@ class InnerMock {
         /// @return The return value from the first matching mock case.
         /// @throws Throws an UnmockedCallException if the arguments does not
         /// match any mock case.
+        /// @tparam id The MockWithID used to identify the mock case that first
+        /// added a mock case to the method.
+        /// @tparam TReturn The return type of the mocked method.
+        /// @tparam TArguments The types of the arguments to the mocked method.
         template <typename TReturn, typename ...TArguments>
         TReturn onCall(
             MockCaseID id,
@@ -196,6 +216,8 @@ class InnerMock {
         ///
         /// @param virtualTableOffset The method's virtual table offset.
         /// @return The method's MockMethod.
+        /// @tparam TReturn The return type of the mocked method.
+        /// @tparam TArguments The types of the arguments to the mocked method.
         template <typename TReturn, typename ...TArguments>
         MockMethod<TReturn, TArguments...>& getMockMethod(
             VirtualTableOffset virtualTableOffset) {

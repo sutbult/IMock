@@ -10,6 +10,9 @@ namespace IMock {
 namespace Internal {
 
 /// An ICase always calling a provided callback.
+///
+/// @tparam TReturn The return type of the mocked method.
+/// @tparam TArguments The types of the arguments of the mocked method.
 template <typename TReturn, typename ...TArguments>
 class MockWithMethodCase : public ICase<TReturn, TArguments...> {
     private:

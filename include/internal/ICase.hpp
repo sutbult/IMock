@@ -8,6 +8,9 @@ namespace IMock {
 namespace Internal {
 
 /// Interface for a mocked case.
+///
+/// @tparam TReturn The return type of the mocked method.
+/// @tparam TArguments The types of the arguments to the method.
 template <typename TReturn, typename ...Arguments>
 class ICase {
     public:

@@ -11,6 +11,8 @@ namespace IMock {
 namespace Internal {
 
 /// Stores a raw virtual table for an interface.
+///
+/// @tparam TInterface The type of interface to store a virtual table for.
 template <typename TInterface>
 class VirtualTable {
     private:

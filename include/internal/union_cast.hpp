@@ -7,6 +7,8 @@ namespace Internal {
 /// raw memory using a union. Use with caution.
 /// @param source The value to cast from.
 /// @return The casted value.
+/// @tparam TTarget The type to convert the value to.
+/// @tparam TSource The type to convert the value from.
 template <typename TTarget, typename TSource>
 #if defined(__GNUG__) && !defined(__clang__)
 [[gnu::optimize("no-devirtualize")]]
