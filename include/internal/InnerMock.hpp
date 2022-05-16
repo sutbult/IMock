@@ -3,11 +3,13 @@
 #include <functional>
 #include <map>
 
-#include <MockCaseID.hpp>
 #include <internal/CaseMatch.hpp>
 #include <internal/makeUnique.hpp>
 #include <internal/MockMethod.hpp>
+#include <internal/union_cast.hpp>
 #include <internal/VirtualTable.hpp>
+#include <Method.hpp>
+#include <MockCaseID.hpp>
 
 namespace IMock {
 namespace Internal {
@@ -48,6 +50,21 @@ class InnerMock {
                     // Return the contained InnerMock.
                     return _mock;
                 }
+                
+                /// Called when a call to a method in the interface is called.
+                ///
+                /// @param arguments The arguments the method was called with.
+                /// @return The return value from the first matching mock case.
+                /// @throws Throws an UnmockedCallException if the arguments
+                /// does not match any mock case.
+                template <MockCaseID id, typename TReturn,
+                    typename ...TArguments>
+                TReturn onCall(TArguments... arguments) {
+                    // Forward the call to _mock.onCall.
+                    return _mock.onCall<TReturn, TArguments...>(
+                        id,
+                        std::move(arguments)...);
+                }
         };
 
         /// Maps the MockCaseID's of all mock cases to the virtual table offsets
@@ -86,13 +103,13 @@ class InnerMock {
         /// calls done to the added mock case.
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Forward the call to addCaseWithOnCall.
             return addCaseWithOnCall<TReturn, TArguments...>(
                 id,
-                onCall<id, TReturn, TArguments...>,
+                &MockFake::template onCall<id, TReturn, TArguments...>,
                 method,
                 std::move(methodString),
                 std::move(mockCase));
@@ -112,8 +129,8 @@ class InnerMock {
         template <typename TReturn, typename ...TArguments>
         MockCaseCallCount addCaseWithOnCall(
             MockCaseID id,
-            TReturn (*onCall)(MockFake*, TArguments...),
-            TReturn (TInterface::*method)(TArguments...),
+            Method<MockFake, TReturn, TArguments...> onCall,
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
             // Check if a virtual table offset has been stored in
@@ -139,7 +156,7 @@ class InnerMock {
 
                 // Store a pointer to onCall in the virtual table.
                 _virtualTable.get()[virtualTableOffset]
-                    = reinterpret_cast<void*>(onCall);
+                    = union_cast<void*>(onCall);
             }
             
             // Get the MockMethod for the method and add a mock case to it.
@@ -147,18 +164,6 @@ class InnerMock {
                 .addCase(std::move(mockCase));
         }
 
-        /// Called when a call to a method in the interface is called.
-        ///
-        /// @param mockFake The MockFake instance this call was made on.
-        /// @param arguments The arguments the method was called with.
-        template <MockCaseID id, typename TReturn, typename ...TArguments>
-        static TReturn onCall(MockFake* mockFake, TArguments... arguments) {
-            // Forward the call to onCallWithMockCaseID.
-            return onCallWithMockCaseID<TReturn, TArguments...>(
-                id,
-                mockFake,
-                std::move(arguments)...);
-        }
 
         /// Called when a call to a method in the interface is called.
         ///
@@ -166,22 +171,19 @@ class InnerMock {
         /// call.
         /// @param mockFake The MockFake instance this call was made on.
         /// @param arguments The arguments the method was called with.
+        /// @return The return value from the first matching mock case.
+        /// @throws Throws an UnmockedCallException if the arguments does not
+        /// match any mock case.
         template <typename TReturn, typename ...TArguments>
-        static TReturn onCallWithMockCaseID(
+        TReturn onCall(
             MockCaseID id,
-            MockFake* mockFake,
             TArguments... arguments) {
-            // Get the InnerMock.
-            InnerMock& mock = mockFake->getMock();
-
             // Get the virtual table offset for the MockCaseID.
-            VirtualTableOffset virtualTableOffset
-                = mock._virtualTableOffsets[id];
+            VirtualTableOffset virtualTableOffset = _virtualTableOffsets[id];
 
             // Get the MockMethod for the called method and forward the call to
             // onCall.
-            return mock
-                .getMockMethod<TReturn, TArguments...>(virtualTableOffset)
+            return getMockMethod<TReturn, TArguments...>(virtualTableOffset)
                 .onCall(std::move(arguments)...);
         }
 

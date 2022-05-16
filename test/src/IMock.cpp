@@ -5,16 +5,16 @@
 
 #include <IMock.hpp>
 
-TEST_CASE("can mock a basic interface", "[basic]") {
-    // Declare a basic interface.
-    class ICalculator {
-        public:
-            virtual int add(int, int) = 0;
-            virtual int subtract(int, int) = 0;
-            virtual int multiply(int, int) = 0;
-            virtual int divide(int, int) = 0;
-    };
+/// An interface representing a calculator.
+class ICalculator {
+    public:
+        virtual int add(int, int) = 0;
+        virtual int subtract(int, int) = 0;
+        virtual int multiply(int, int) = 0;
+        virtual int divide(int, int) = 0;
+};
 
+TEST_CASE("can mock a basic interface", "[basic]") {
     // Create a Mock of ICalculator.
     IMock::Mock<ICalculator> mock;
 
@@ -392,19 +392,19 @@ TEST_CASE("can mock a basic interface", "[basic]") {
     }
 }
 
+/// Like ICalculator but all values are constant references.
+class IConstantReferenceCalculator {
+    public:
+        virtual const int& add(const int&, const int&) = 0;
+        virtual const int& subtract(const int&, const int&) = 0;
+        virtual const int& multiply(const int&, const int&) = 0;
+        virtual const int& divide(const int&, const int&) = 0;
+};
+
 TEST_CASE("can mock an interface where every argument and return value is a "
     "constant reference", "[reference]") {
-    // Declare an interface.
-    class ICalculator {
-        public:
-            virtual const int& add(const int&, const int&) = 0;
-            virtual const int& subtract(const int&, const int&) = 0;
-            virtual const int& multiply(const int&, const int&) = 0;
-            virtual const int& divide(const int&, const int&) = 0;
-    };
-
-    // Create a Mock of ICalculator.
-    IMock::Mock<ICalculator> mock;
+    // Create a Mock of IConstantReferenceCalculator.
+    IMock::Mock<IConstantReferenceCalculator> mock;
 
     SECTION("mock add") {
         // Declare variables for one and two. It is necessary to keep the memory
@@ -492,13 +492,13 @@ TEST_CASE("can mock an interface where every argument and return value is a "
     }
 }
 
-TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
-    // Declare an interface without arguments.
-    class INoArguments {
-        public:
-            virtual int getInt() = 0;
-    };
+/// An interface without any arguments.
+class INoArguments {
+    public:
+        virtual int getInt() = 0;
+};
 
+TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
     // Create a Mock of INoArguments.
     IMock::Mock<INoArguments> mock;
 
@@ -582,14 +582,14 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
     }
 }
 
+/// An interface with no return value.
+class INoReturnValue {
+    public:
+        virtual void setInt(int) = 0;
+};
+
 TEST_CASE("can mock an interface without any return value",
     "[no_return_value]") {
-    // Declare a basic interface.
-    class INoReturnValue {
-        public:
-            virtual void setInt(int) = 0;
-    };
-
     // Create a Mock of INoReturnValue.
     IMock::Mock<INoReturnValue> mock;
 
@@ -689,50 +689,50 @@ TEST_CASE("can mock an interface without any return value",
     }
 }
 
+/// A class whose instances cannot be copied.
+class NoCopy {
+    private:
+        /// An integer held by a unique_ptr, which can't be copied.
+        std::unique_ptr<int> _value;
+
+    public:
+        /// Creates a NoCopy with a provided value.
+        ///
+        /// @param value The value to held.
+        NoCopy(int value)
+            : _value(IMock::Internal::makeUnique<int>(std::move(value))) {
+        }
+
+        /// Gets the value.
+        ///
+        /// @return The value.
+        const int& getValue() const {
+            // Return the value.
+            return *_value;
+        }
+
+        /// Compares the NoCopy with another NoCopy by comparing the
+        /// contained values.
+        ///
+        /// @param other The NoCopy to compare to.
+        /// @return True if the contained values equal each other and false
+        /// otherwise.
+        bool operator == (const NoCopy& other) const {
+            // Compare the values and return the result.
+            return this->getValue() == other.getValue();
+        }
+};
+
+// An interface using NoCopy as arguments and return values.
+class INoCopyArgument {
+    public:
+        virtual void setInt(NoCopy) = 0;
+        virtual NoCopy getInt() = 0;
+        virtual NoCopy id(NoCopy) = 0;
+};
+
 TEST_CASE("can mock an interface with an argument that can't be copied",
     "[no_copy_argument]") {
-    // Declare a class that can't be copied.
-    class NoCopy {
-        private:
-            /// An integer held by a unique_ptr, which can't be copied.
-            std::unique_ptr<int> _value;
-
-        public:
-            /// Creates a NoCopy with a provided value.
-            ///
-            /// @param value The value to held.
-            NoCopy(int value)
-                : _value(IMock::Internal::makeUnique<int>(std::move(value))) {
-            }
-
-            /// Gets the value.
-            ///
-            /// @return The value.
-            const int& getValue() const {
-                // Return the value.
-                return *_value;
-            }
-
-            /// Compares the NoCopy with another NoCopy by comparing the
-            /// contained values.
-            ///
-            /// @param other The NoCopy to compare to.
-            /// @return True if the contained values equal each other and false
-            /// otherwise.
-            bool operator == (const NoCopy& other) const {
-                // Compare the values and return the result.
-                return this->getValue() == other.getValue();
-            }
-    };
-
-    // Declare a basic interface.
-    class INoCopyArgument {
-        public:
-            virtual void setInt(NoCopy) = 0;
-            virtual NoCopy getInt() = 0;
-            virtual NoCopy id(NoCopy) = 0;
-    };
-
     // Create a Mock of INoCopyArgument.
     IMock::Mock<INoCopyArgument> mock;
 
@@ -908,6 +908,12 @@ TEST_CASE("can mock an interface in a secondary file") {
     REQUIRE_NOTHROW(mockSecondaryFile());
 }
 
+// An interface with an identity method.
+class IIdentity {
+    public:
+        virtual int id(int) = 0;
+};
+
 TEST_CASE("benchmark", "[.][benchmark]") {
     // Declare a utility class.
     class HeavyMock {
@@ -917,12 +923,6 @@ TEST_CASE("benchmark", "[.][benchmark]") {
             ///
             /// @param mockCount The number of mocks to set up.
             static void heavyMock(int mockCount) {
-                // Declare a basic interface.
-                class IIdentity {
-                    public:
-                        virtual int id(int) = 0;
-                };
-
                 // Create a Mock of IIdentity.
                 IMock::Mock<IIdentity> mock;
 

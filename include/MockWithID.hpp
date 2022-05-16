@@ -1,6 +1,7 @@
 #pragma once
 
 #include <internal/InnerMock.hpp>
+#include <Method.hpp>
 #include <MockCaseID.hpp>
 #include <MockWithMethod.hpp>
 
@@ -30,7 +31,7 @@ class MockWithID {
         /// @return A MockWithMethod associated with the method.
         template <typename TReturn, typename ...TArguments>
         MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString) {
             // Create and return a MockWithMethod with the InnerMock,
             // the method and the call string.

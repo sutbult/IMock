@@ -9,6 +9,7 @@
 #include <internal/InnerMock.hpp>
 #include <internal/makeUnique.hpp>
 #include <internal/MockWithArgumentsCase.hpp>
+#include <Method.hpp>
 #include <MockCaseCallCount.hpp>
 #include <MockCaseID.hpp>
 
@@ -23,7 +24,7 @@ class MockWithArguments {
         Internal::InnerMock<TInterface>& _mock;
 
         /// The method to add a mock case to.
-        TReturn (TInterface::*_method)(TArguments...);
+        Method<TInterface, TReturn, TArguments...> _method;
 
         /// A string describing how a call is made to the method being mocked.
         std::string _methodString;
@@ -44,7 +45,7 @@ class MockWithArguments {
         /// method being mocked.
         MockWithArguments(
             Internal::InnerMock<TInterface>& mock,
-            TReturn (TInterface::*method)(TArguments...),
+            Method<TInterface, TReturn, TArguments...> method,
             std::string methodString,
             std::tuple<TArguments...> arguments)
             : _mock(mock)

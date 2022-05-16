@@ -1,7 +1,7 @@
 #include <exception>
 #include <iostream>
 #include <fstream>
-#include <set>
+#include <map>
 #include <string>
 #include <sys/stat.h>
 #include <vector>
@@ -10,9 +10,13 @@ using std::cout;
 using std::endl;
 using std::ifstream;
 using std::ofstream;
-using std::set;
+using std::map;
+using std::pair;
 using std::string;
 using std::vector;
+
+/// Defines which characters counts as whitespaces.
+const std::string whitespaces = " \t\n\r";
 
 /// A class implementing std::exception that can be thrown by the program when
 /// deemed necessary.
@@ -59,23 +63,44 @@ bool startsWith(string start, string target) {
     return match;
 }
 
-/// Removes any initial whitespaces.
+/// Checks if a target is empty or only contains whitespaces.
 ///
-/// @param target The string to be trimmed.
-/// @return The target without any initial whitespaces.
-string trimStart(string target) {
+/// @param target The target string to be checked.
+/// @return True if target is empty or only contains whitespaces and false
+/// otherwise.
+bool isBlank(string target) {
     // Get the first character that is not a whitespace.
-    int firstNonWhitespace = target.find_first_not_of(" \t\n\r");
+    int firstNonWhitespace = target.find_first_not_of(whitespaces);
 
     // Check if any non-whitespace characters exist.
-    if(firstNonWhitespace < 0) {
+    bool blank = firstNonWhitespace < 0;
+
+    // Return blank.
+    return blank;
+}
+
+/// Removes any initial or ending whitespaces.
+///
+/// @param target The string to be trimmed.
+/// @return The target without any initial or ending whitespaces.
+string trim(string target) {
+    // Get the first character that is not a whitespace.
+    int firstNonWhitespace = target.find_first_not_of(whitespaces);
+    
+    // Get the last character that is not a whitespace.
+    int lastNonWhitespace = target.find_last_not_of(whitespaces);
+
+    // Check if any non-whitespace characters exist.
+    if(firstNonWhitespace < 0 || lastNonWhitespace < 0) {
         // Return an empty string if the string only contains whitespace
         // characters.
         return "";
     }
     else {
-        // Remove the initial whitespaces.
-        string trimmed = target.substr(firstNonWhitespace);
+        // Remove the initial and ending whitespaces.
+        string trimmed = target.substr(
+            firstNonWhitespace,
+            lastNonWhitespace + 1 - firstNonWhitespace);
 
         // Return the trimmed string.
         return trimmed;
@@ -171,28 +196,53 @@ const int includeStartLength = includeStart.length();
 ///
 /// @param includeFolder The folder including all headers.
 /// @param path The path to the header relative to the include folder.
-/// @param internalHeaders A set containing the paths to all known internal
-/// headers.
-/// @param externalHeaders A set containing the paths to all known external
-/// headers.
+/// @param pragmaOnceLine The line to be written as #pragma once.
+/// @param internalHeaders A map containing the paths to all known internal
+/// headers together with a raw line including the header.
+/// @param externalHeaders A map containing the paths to all known external
+/// headers together with a raw line including the header.
 /// @param regularLines The regular lines to be included in the merged header.
 void processHeader(
     string includeFolder,
     string path,
-    set<string>& internalHeaders,
-    set<string>& externalHeaders,
+    string& pragmaOnceLine,
+    map<string, string>& internalHeaders,
+    map<string, string>& externalHeaders,
     vector<string>& regularLines) {
     // Read the header.
     vector<string> lines = readFile(includeFolder + path);
 
     // Process each line in the header.
-    for(string line : lines) {
+    for(vector<string>::iterator iterator = lines.begin();
+        iterator != lines.end();
+        iterator++) {
+        // Get the current line.
+        string line = *iterator;
+
         // Trim the line.
-        string compareLine = trimStart(line);
+        string compareLine = trim(line);
 
         // Check if the line is #pragma once.
         if(compareLine == "#pragma once") {
-            // Ignore the line if it's #pragma once.
+            // Check if pragmaOnceLine has been set.
+            if(pragmaOnceLine.empty()) {
+                // Set the line if not already set.
+
+                // Check if any line exists below the #pragma once line and if
+                // it's blank.
+                string nextLine;
+                if(iterator + 1 < lines.end()
+                    && isBlank(nextLine = *(iterator + 1))) {
+                    // Set pragmaOnceLine together with the next line.
+                    pragmaOnceLine = line + "\n" + nextLine;
+                }
+                else {
+                    // Set pragmaOnceLine to only the line itself.
+                    pragmaOnceLine = line;
+                }
+            }
+
+            // Do not process the line any further.
             continue;
         }
 
@@ -230,19 +280,20 @@ void processHeader(
         // Check isInternal.
         if(!isInternal) {
             // Add the header to externalHeaders unless it's an internal header.
-            externalHeaders.insert(header);
+            externalHeaders[header] = line;
 
             // Continue with the next line.
             continue;
         }
 
-        // Add the header to internalHeaders. 
-        internalHeaders.insert(header);
+        // Add the header to internalHeaders.
+        internalHeaders[header] = line;
 
         // Process the header recursively.
         processHeader(
             includeFolder,
             header,
+            pragmaOnceLine,
             internalHeaders,
             externalHeaders,
             regularLines);
@@ -264,7 +315,7 @@ vector<string> removeDuplicateEmptyLines(vector<string>& lines) {
     // Process each line.
     for(string line : lines) {
         // Check if the line is empty.
-        if(line == "") {
+        if(isBlank(line)) {
             // Check if the previous line is also empty.
             if(!previousEmpty) {
                 // Push the line to result if the previous line is not empty.
@@ -295,11 +346,14 @@ vector<string> removeDuplicateEmptyLines(vector<string>& lines) {
 vector<string> mergeHeaders(
     string includeFolder,
     string rootHeaderPath) {
+    // Create an empty string to be assigned to a #pragma once line.
+    string pragmaOnceLine = "";
+
     // Create a set for the internal headers.
-    set<string> internalHeaders;
+    map<string, string> internalHeaders;
 
     // Create a set for the external headers.
-    set<string> externalHeaders;
+    map<string, string> externalHeaders;
 
     // Create a vector for the outputted header.
     vector<string> regularLines;
@@ -308,6 +362,7 @@ vector<string> mergeHeaders(
     processHeader(
         includeFolder + "/",
         rootHeaderPath,
+        pragmaOnceLine,
         internalHeaders,
         externalHeaders,
         regularLines);
@@ -315,13 +370,13 @@ vector<string> mergeHeaders(
     // Create a vector for the lines to be included in the merged header.
     vector<string> mergedHeaderLines;
 
-    // Push a #pragma once statement.
-    mergedHeaderLines.push_back("#pragma once\n");
+    // Push the #pragma once line.
+    mergedHeaderLines.push_back(pragmaOnceLine);
 
     // Process each external header.
-    for(string externalHeader : externalHeaders) {
+    for(pair<string, string> externalHeader : externalHeaders) {
         // Push the current external header.
-        mergedHeaderLines.push_back("#include <" + externalHeader + ">");
+        mergedHeaderLines.push_back(externalHeader.second);
     }
 
     // Process each regular line.

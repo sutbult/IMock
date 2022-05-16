@@ -2,6 +2,7 @@
 
 #include <internal/VirtualTableOffset.hpp>
 #include <internal/VirtualTableOffsetReference.hpp>
+#include <Method.hpp>
 
 namespace IMock {
 namespace Internal {
@@ -9,6 +10,15 @@ namespace Internal {
 /// Contains static methods used to get information about virtual table sizes
 /// and offsets within them.
 class VirtualTableOffsetContext {
+    private:
+        /// An interface inheriting the provided interface.
+        template <typename TInterface>
+        class DerivedInterface : public TInterface {
+            public:
+                /// This method will come after any other methods.
+                virtual void lastMethod() = 0;
+        };
+
     public:
         /// VirtualTableOffsetContext is not supposed to be instantiated since
         /// it only contains static methods.
@@ -21,11 +31,15 @@ class VirtualTableOffsetContext {
         /// @return The virtual table offset of the method.
         template <typename TInterface, typename TReturn, typename ...TArguments>
         static VirtualTableOffset getVirtualTableOffset(
-            TReturn (TInterface::*method)(TArguments...)) {    
+            Method<TInterface, TReturn, TArguments...> method) {
+            // Declare a using for reference methods.
+            using ReferenceMethod
+                = Method<VirtualTableOffsetReference, VirtualTableOffset>;
+
             // Cast the provided method to a reference method with the same
             // offset in a reference class.
-            auto referenceMethod = reinterpret_cast<
-                VirtualTableOffset (VirtualTableOffsetReference::*)()>(method);
+            ReferenceMethod referenceMethod
+                = reinterpret_cast<ReferenceMethod>(method);
             
             // Create a VirtualTableOffsetReference to call the reference method
             // on.
@@ -41,17 +55,10 @@ class VirtualTableOffsetContext {
         /// @return The size of the virtual table of the interface.
         template <typename TInterface>
         static VirtualTableSize getVirtualTableSize() {
-            // Create an interface inheriting the provided interface.
-            class DerivedInterface : public TInterface {
-                public:
-                    /// This method will come after any other methods.
-                    virtual void lastMethod() = 0;
-            };
-
             // Get the virtual table offset of the last method, which will be
             // the size of the provided interface's virtual table.
             VirtualTableOffset virtualTableSize = getVirtualTableOffset(
-                &DerivedInterface::lastMethod);
+                &DerivedInterface<TInterface>::lastMethod);
 
             // Return the virtual table size.
             return virtualTableSize;
