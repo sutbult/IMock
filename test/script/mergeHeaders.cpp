@@ -1,19 +1,31 @@
+#include <chrono>
 #include <exception>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <sys/stat.h>
 #include <vector>
 
+using std::chrono::duration_cast;
+using std::chrono::microseconds;
+using std::chrono::system_clock;
 using std::cout;
 using std::endl;
+using std::gmtime;
 using std::ifstream;
 using std::ofstream;
 using std::map;
 using std::pair;
+using std::put_time;
 using std::string;
+using std::stringstream;
 using std::vector;
+
+/// The current version of IMock.
+const string version = "1.0.0";
 
 /// Defines which characters counts as whitespaces.
 const std::string whitespaces = " \t\n\r";
@@ -338,6 +350,86 @@ vector<string> removeDuplicateEmptyLines(vector<string>& lines) {
     return result;
 }
 
+/// Gets the current time in UTC as a string.
+///
+/// @return The current time in UTC as a string.
+string getCurrentTime() {
+    // Get the current time.
+    auto now = system_clock::now();
+
+    // Convert the current time to time_t.
+    time_t nowTime = system_clock::to_time_t(now);
+
+    // Get the microsecond part of the current time.
+    auto timeMicroseconds = duration_cast<microseconds>(now.time_since_epoch())
+        % 1000000;
+
+    // Create a stringstream.
+    stringstream stringstream;
+    stringstream
+        // Print the current date and time.
+        << put_time(gmtime(&nowTime), "%F %T")
+
+        // Print a period as separator.
+        << "."
+
+        // Print the microsecond part.
+        << std::setfill('0') << std::setw(6) << timeMicroseconds.count();
+
+    // Create a string and return it.
+    return stringstream.str();
+}
+
+/// Creates lines containing a comment with information about the version,
+/// copyright and when the single header was generated.
+///
+/// @return The lines in the head comment.
+vector<string> createHeadComment() {
+    // Read the LICENSE file.
+    vector<string> licenseLines = readFile("LICENSE");
+
+    // Get the first line in the LICENSE file.
+    string firstLicenseLine = licenseLines[0];
+
+    // Get the potential whitespace ending of the first line.
+    string lineEnding = firstLicenseLine.substr(
+        firstLicenseLine.find_last_not_of(whitespaces) + 1);
+
+    // Create a vector for the head comment.
+    vector<string> headCommentLines;
+
+    // Add a line starting a multiline comment.
+    headCommentLines.push_back("/*" + lineEnding);
+
+    // Add a line with the library name and the version.
+    headCommentLines.push_back("IMock " + version + lineEnding);
+
+    // Get the current time.
+    string currentTime = getCurrentTime();
+
+    // Add a line with the current time.
+    headCommentLines.push_back("Generated " + currentTime + " UTC"
+        + lineEnding);
+
+    // Add an empty line.
+    headCommentLines.push_back(lineEnding);
+
+    // Process each LICENSE file line.
+    for(string licenseLine : licenseLines) {
+        // Add the current LICENSE file line.
+        headCommentLines.push_back(licenseLine);
+    }
+
+    // Add a line ending the multiline comment. 
+    headCommentLines.push_back("*/" + lineEnding);
+
+    // Add an empty line.
+    headCommentLines.push_back(lineEnding);
+
+    // Return the created head comment lines.
+    return headCommentLines;
+}
+
 /// Merges all headers reachable from the given root header.
 ///
 /// @param includeFolder The folder including all headers.
@@ -372,6 +464,15 @@ vector<string> mergeHeaders(
 
     // Push the #pragma once line.
     mergedHeaderLines.push_back(pragmaOnceLine);
+
+    // Create head comment lines.
+    vector<string> headCommentLines = createHeadComment();
+
+    // Process each head comment line.
+    for(string headCommentLine : headCommentLines) {
+        // Push the current head comment line.
+        mergedHeaderLines.push_back(headCommentLine);
+    }
 
     // Process each external header.
     for(pair<string, string> externalHeader : externalHeaders) {
