@@ -25,6 +25,12 @@ class MockWithMethodCase : public ICase<TReturn, TArguments...> {
             : _fake(std::move(fake)) {
             }
 
+        /// Always matches the arguments.
+        ///
+        /// @param arguments The arguments the mocked method was called with,
+        /// which will be moved to _fake.
+        /// @return A CaseMatch indicating a match using the return value from
+        /// _fake.
         CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments) {
             // Return a CaseMatch for the fake.
             return Internal::CaseMatchFactory::matchFake(

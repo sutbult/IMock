@@ -156,3 +156,7 @@ docker-benchmark: docker-build
 # container.
 docker-test-all: docker-build
 	docker run -t imock make test-all
+
+# Builds the documentation with Doxygen.
+docs:
+	doxygen

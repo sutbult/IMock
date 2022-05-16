@@ -98,6 +98,8 @@ class InnerMock {
         /// Adds a mock case to the provided method.
         ///
         /// @param method The method to add a mock case to.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         /// @param mockCase The mock case to add.
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
@@ -123,6 +125,8 @@ class InnerMock {
         /// @param onCall The onCall method to insert into the virtual table if
         /// required.
         /// @param method The method to add a mock case to.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         /// @param mockCase The mock case to add.
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.

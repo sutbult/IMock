@@ -10,6 +10,7 @@ namespace Internal {
 /// a tuple.
 class Apply {
     private:
+        //! @cond Doxygen_Suppress
         // A trick to statically produce a list of integers. The solution has
         // been taken from: https://stackoverflow.com/a/7858971/6188897
         template<int ...>
@@ -24,6 +25,7 @@ class Apply {
         struct gens<0, S...>{
             typedef seq<S...> type;
         };
+        //! @endcond
 
         /// Calls the provided callback with the arguments in the provided
         /// tuple.

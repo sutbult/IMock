@@ -22,3 +22,6 @@ ALWAYS_DETAILED_SEC = YES
 
 # A brief description can span multiple lines.
 MULTILINE_CPP_IS_BRIEF = YES
+
+# Exclude the test directory.
+EXCLUDE = test
