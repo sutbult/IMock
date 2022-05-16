@@ -18,6 +18,7 @@ namespace Internal {
 /// a tuple.
 class Apply {
     private:
+        //! @cond Doxygen_Suppress
         // A trick to statically produce a list of integers. The solution has
         // been taken from: https://stackoverflow.com/a/7858971/6188897
         template<int ...>
@@ -32,6 +33,7 @@ class Apply {
         struct gens<0, S...>{
             typedef seq<S...> type;
         };
+        //! @endcond
 
         /// Calls the provided callback with the arguments in the provided
         /// tuple.
@@ -42,6 +44,9 @@ class Apply {
         /// @param callback The function to call.
         /// @param arguments The arguments to call the callback with.
         /// @return The return value from the callback.
+        /// @tparam A counter used to extract arguments.
+        /// @tparam TReturn The return type of the callback.
+        /// @tparam TArguments The types of the arguments of the callback.
         template<int ...S, typename TReturn,
             typename ...TArguments>
         static TReturn applyWithSeq(
@@ -63,6 +68,8 @@ class Apply {
         /// @param callback The function to call.
         /// @param arguments The arguments to call the callback with.
         /// @return The return value from the callback.
+        /// @tparam TReturn The return type of the callback.
+        /// @tparam TArguments The types of the arguments of the callback.
         template<typename TReturn, typename ...TArguments>
         static TReturn apply(
             std::function<TReturn (TArguments...)> callback,
@@ -81,6 +88,8 @@ namespace IMock {
 namespace Internal {
 
 /// Interface for retrieving a return value.
+///
+/// @tparam TReturn The return type of the mocked method.
 template <typename TReturn>
 class IReturnValue {
     public:
@@ -105,6 +114,8 @@ class VoidReturnValue : public IReturnValue<void> {
 };
 
 /// Implements IReturnValue to make getReturnValue return the provided value.
+///
+/// @tparam TReturn The return type of the mocked method.
 template <typename TReturn>
 class NonVoidReturnValue : public IReturnValue<TReturn> {
     private:
@@ -127,6 +138,9 @@ class NonVoidReturnValue : public IReturnValue<TReturn> {
 
 /// Implements FakeReturnValue to make getReturnValue call the provided fake
 /// with the provided arguments and return its return value.
+///
+/// @tparam TReturn The return type of the mocked method.
+/// @tparam TArguments The types of the arguments of the mocked method.
 template <typename TReturn, typename ...TArguments>
 class FakeReturnValue : public IReturnValue<TReturn> {
     private:
@@ -162,6 +176,7 @@ namespace Internal {
 
 /// Indicates if a call to a mock case resulted in a match with a return value
 /// or if it resulted in no match.
+/// @tparam TReturn The return type of the mocked method.
 template <typename TReturn>
 class CaseMatch {
     private:
@@ -212,6 +227,9 @@ namespace Internal {
 ///
 /// @param arguments Arguments used to create the contained value.
 /// @return A created unique_ptr.
+/// @tparam TPointer The type of contained value to create.
+/// @tparam TArguments The types of the arguments used to create the contained
+/// value.
 template<typename TPointer, typename... TArguments>
 std::unique_ptr<TPointer> makeUnique(TArguments&&... arguments)
 {
@@ -299,6 +317,9 @@ namespace IMock {
 namespace Internal {
 
 /// Interface for a mocked case.
+///
+/// @tparam TReturn The return type of the mocked method.
+/// @tparam TArguments The types of the arguments to the method.
 template <typename TReturn, typename ...Arguments>
 class ICase {
     public:
@@ -421,6 +442,9 @@ class ToString {
         // A trick to see if two types can use the insertion operator.
         // The solution has been taken from:
         // https://stackoverflow.com/a/22759544/6188897
+        ///
+        /// @tparam S The stream to stream to.
+        /// @tparam T The object to be streamed.
         template<typename S, typename T>
         class is_streamable
         {
@@ -448,6 +472,7 @@ class ToString {
         ///
         /// @param value The value to be converted.
         /// @return A string representation of the value.
+        /// @tparam TValue The value to be converted to a string.
         template <typename TValue>
         static std::string toString(
             typename std::enable_if<
@@ -469,6 +494,7 @@ class ToString {
         ///
         /// @param value The value to be converted.
         /// @return A string representation of the value.
+        /// @tparam TValue The value to be converted to a string.
         template <typename TValue>
         static std::string toString(
             typename std::enable_if<
@@ -483,6 +509,7 @@ class ToString {
         ///
         /// @param values The values to be converted.
         /// @return String representations of the values.
+        /// @tparam TValue The values to be converted to strings.
         template <typename ...TValue>
         static std::vector<std::string> toStrings(TValue... values) {
             // Call toString for each value.
@@ -642,6 +669,9 @@ namespace IMock {
 namespace Internal {
 
 /// A mocked method containing a number of mock cases.
+///
+/// @tparam TReturn The return type of the mocked method.
+/// @tparam TArguments The types of the arguments of the mocked method.
 template <typename TReturn, typename ...TArguments>
 class MockMethod : public IMockMethodNonGeneric {
     private:
@@ -818,6 +848,8 @@ namespace Internal {
 /// raw memory using a union. Use with caution.
 /// @param source The value to cast from.
 /// @return The casted value.
+/// @tparam TTarget The type to convert the value to.
+/// @tparam TSource The type to convert the value from.
 template <typename TTarget, typename TSource>
 #if defined(__GNUG__) && !defined(__clang__)
 [[gnu::optimize("no-devirtualize")]]
@@ -976,6 +1008,10 @@ namespace IMock {
 
 /// A method on TInterface with the return type TReturn with the arguments
 /// ...TArguments.
+///
+/// @tparam TInterface The interface that the method belongs to.
+/// @tparam TReturn The return type of the method.
+/// @tparam TArguments The types of the arguments to the method.
 template <typename TInterface, typename TReturn, typename ...TArguments>
 using Method = TReturn (TInterface::*)(TArguments...);
 
@@ -989,6 +1025,8 @@ namespace Internal {
 class VirtualTableOffsetContext {
     private:
         /// An interface inheriting the provided interface.
+        ///
+        /// @tparam TInterface The interface to inherit from.
         template <typename TInterface>
         class DerivedInterface : public TInterface {
             public:
@@ -1006,6 +1044,8 @@ class VirtualTableOffsetContext {
         ///
         /// @param method The method to look up.
         /// @return The virtual table offset of the method.
+        /// @tparam TInterface The type of interface to get the virtual table
+        /// offset from.
         template <typename TInterface, typename TReturn, typename ...TArguments>
         static VirtualTableOffset getVirtualTableOffset(
             Method<TInterface, TReturn, TArguments...> method) {
@@ -1030,6 +1070,8 @@ class VirtualTableOffsetContext {
         /// Gets the size of the virtual table of an interface.
         ///
         /// @return The size of the virtual table of the interface.
+        /// @tparam TInterface The type of interface to get the virtual table
+        /// size of.
         template <typename TInterface>
         static VirtualTableSize getVirtualTableSize() {
             // Get the virtual table offset of the last method, which will be
@@ -1049,6 +1091,8 @@ namespace IMock {
 namespace Internal {
 
 /// Stores a raw virtual table for an interface.
+///
+/// @tparam TInterface The type of interface to store a virtual table for.
 template <typename TInterface>
 class VirtualTable {
     private:
@@ -1103,6 +1147,8 @@ namespace Internal {
 
 /// Mocks a provided interface to perform wanted actions and return certain
 /// values when its virtual methods are called.
+///
+/// @tparam TInterface The type of interface to be mocked.
 template <typename TInterface>
 class InnerMock {
     private:
@@ -1144,6 +1190,13 @@ class InnerMock {
                 /// @return The return value from the first matching mock case.
                 /// @throws Throws an UnmockedCallException if the arguments
                 /// does not match any mock case.
+                ///
+                /// @return A MockWithID associated with the MockCaseID.
+                /// @tparam id The MockWithID used to identify the mock case
+                /// that first added a mock case to the method.
+                /// @tparam TReturn The return type of the mocked method.
+                /// @tparam TArguments The types of the arguments of the mocked
+                /// method.
                 template <MockCaseID id, typename TReturn,
                     typename ...TArguments>
                 TReturn onCall(TArguments... arguments) {
@@ -1185,9 +1238,15 @@ class InnerMock {
         /// Adds a mock case to the provided method.
         ///
         /// @param method The method to add a mock case to.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         /// @param mockCase The mock case to add.
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
+        /// @tparam id The MockWithID used to identify the mock case to add.
+        /// @tparam TReturn The return type of the method being mocked.
+        /// @tparam TArguments The types of the arguments to the method being
+        /// mocked.
         template <MockCaseID id, typename TReturn, typename ...TArguments>
         MockCaseCallCount addCase(
             Method<TInterface, TReturn, TArguments...> method,
@@ -1210,9 +1269,14 @@ class InnerMock {
         /// @param onCall The onCall method to insert into the virtual table if
         /// required.
         /// @param method The method to add a mock case to.
+        /// @param methodString A string describing how a call is made to the
+        /// method being mocked.
         /// @param mockCase The mock case to add.
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
+        /// @tparam TReturn The return type of the method being mocked.
+        /// @tparam TArguments The types of the arguments to the method being
+        /// mocked.
         template <typename TReturn, typename ...TArguments>
         MockCaseCallCount addCaseWithOnCall(
             MockCaseID id,
@@ -1260,6 +1324,10 @@ class InnerMock {
         /// @return The return value from the first matching mock case.
         /// @throws Throws an UnmockedCallException if the arguments does not
         /// match any mock case.
+        /// @tparam id The MockWithID used to identify the mock case that first
+        /// added a mock case to the method.
+        /// @tparam TReturn The return type of the mocked method.
+        /// @tparam TArguments The types of the arguments to the mocked method.
         template <typename TReturn, typename ...TArguments>
         TReturn onCall(
             MockCaseID id,
@@ -1278,6 +1346,8 @@ class InnerMock {
         ///
         /// @param virtualTableOffset The method's virtual table offset.
         /// @return The method's MockMethod.
+        /// @tparam TReturn The return type of the mocked method.
+        /// @tparam TArguments The types of the arguments to the mocked method.
         template <typename TReturn, typename ...TArguments>
         MockMethod<TReturn, TArguments...>& getMockMethod(
             VirtualTableOffset virtualTableOffset) {
@@ -1309,6 +1379,7 @@ class CaseMatchFactory {
         CaseMatchFactory() = delete;
 
         /// Creates a CaseMatch indicating no match has been made.
+        /// @tparam TReturn The return type of the mocked method.
         template <typename TReturn>
         static CaseMatch<TReturn> noMatch() {
             /// Create and return a CaseMatch without a return value.
@@ -1322,6 +1393,7 @@ class CaseMatchFactory {
         /// @param returnValue The call's return value.
         /// @return A CaseMatch indicating a match with the provided return
         /// value.
+        /// @tparam TReturn The return type of the mocked method.
         template <typename TReturn>
         static CaseMatch<TReturn> match(TReturn returnValue) {
             // Create and return a CaseMatch with the provided return value.
@@ -1344,6 +1416,8 @@ class CaseMatchFactory {
         /// @param fake The fake to call.
         /// @param arguments The arguments to call the fake with.
         /// @return A CaseMatch indicating a match with the provided fake.
+        /// @tparam TReturn The return type of the mocked method.
+        /// @tparam TArguments The types of the arguments to the method.
         template <typename TReturn, typename ...TArguments>
         static CaseMatch<TReturn> matchFake(
             std::function<TReturn (TArguments...)> fake,
@@ -1363,6 +1437,9 @@ namespace IMock {
 namespace Internal {
 
 /// An ICase always calling a provided callback.
+///
+/// @tparam TReturn The return type of the mocked method.
+/// @tparam TArguments The types of the arguments of the mocked method.
 template <typename TReturn, typename ...TArguments>
 class MockWithMethodCase : public ICase<TReturn, TArguments...> {
     private:
@@ -1378,6 +1455,12 @@ class MockWithMethodCase : public ICase<TReturn, TArguments...> {
             : _fake(std::move(fake)) {
             }
 
+        /// Always matches the arguments.
+        ///
+        /// @param arguments The arguments the mocked method was called with,
+        /// which will be moved to _fake.
+        /// @return A CaseMatch indicating a match using the return value from
+        /// _fake.
         CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments) {
             // Return a CaseMatch for the fake.
             return Internal::CaseMatchFactory::matchFake(
@@ -1411,6 +1494,9 @@ namespace IMock {
 namespace Internal {
 
 /// An ICase checking if calls match provided arguments.
+///
+/// @tparam TReturn The return type of the mocked method.
+/// @tparam TArguments The types of the arguments of the mocked method.
 template <typename TReturn, typename ...TArguments>
 class MockWithArgumentsCase : public ICase<TReturn, TArguments...> {
     private:
@@ -1432,6 +1518,11 @@ class MockWithArgumentsCase : public ICase<TReturn, TArguments...> {
             , _fake(std::move(fake)) {
             }
 
+        /// Checks if the provided arguments matches the provided arguments.
+        ///
+        /// @param arguments The arguments the mocked method was called with,
+        /// which will be moved to _fake if a match is made.
+        /// @return A CaseMatch indicating if the arguments resulted in a match.
         CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments) {
             // Check if the call arguments matches the mock case's arguments.
             if(arguments == _arguments) {
@@ -1453,6 +1544,11 @@ class MockWithArgumentsCase : public ICase<TReturn, TArguments...> {
 namespace IMock {
 
 /// A Mock with an associated method and arguments to add a mock case for.
+///
+/// @tparam TInterface The interface that the mocked method belongs to.
+/// @tparam id The MockWithID used to identify the mock case.
+/// @tparam TReturn The return type of the method.
+/// @tparam TArguments The types of the arguments to the method.
 template <typename TInterface, MockCaseID id, typename TReturn,
     typename ...TArguments>
 class MockWithArguments {
@@ -1503,6 +1599,8 @@ class MockWithArguments {
         /// @param returnValue The value to return when a match happens.
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
+        /// @tparam R The return type of the method as infered from TReturn.
+        /// Do not override it.
         template<typename R = TReturn>
         MockCaseCallCount returns(
             typename std::enable_if<!std::is_void<R>::value, TReturn>::type
@@ -1531,6 +1629,8 @@ class MockWithArguments {
         ///
         /// @return A MockCaseCallCount that can be queried about the number of
         /// calls done to the added mock case.
+        /// @tparam R The return type of the method as infered from TReturn.
+        /// Do not override it.
         template<typename R = TReturn,
             typename std::enable_if<std::is_void<R>::value, R>::type* = nullptr>
         MockCaseCallCount returns() {
@@ -1608,6 +1708,11 @@ class MockWithArguments {
 namespace IMock {
 
 /// A Mock with an associated method to add a mock case for.
+///
+/// @tparam TInterface The interface that the method belongs to.
+/// @tparam id The MockWithID used to identify the mock case.
+/// @tparam TReturn The return type of the method.
+/// @tparam TArguments The types of the arguments to the method.
 template <typename TInterface, MockCaseID id, typename TReturn,
     typename ...TArguments>
 class MockWithMethod {
@@ -1677,6 +1782,9 @@ class MockWithMethod {
 namespace IMock {
 
 /// A Mock with an associated MockCaseID used to add a mock case.
+///
+/// @tparam TInterface The interface that the mocked method belongs to.
+/// @tparam id The MockWithID used to identify the mock case to add.
 template <typename TInterface, MockCaseID id>
 class MockWithID {
     private:
@@ -1698,6 +1806,8 @@ class MockWithID {
         /// @param methodString A string describing how a call is made to the
         /// method being mocked.
         /// @return A MockWithMethod associated with the method.
+        /// @tparam TReturn The return type of the method.
+        /// @tparam TArguments The types of the arguments to the method.
         template <typename TReturn, typename ...TArguments>
         MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
             Method<TInterface, TReturn, TArguments...> method,
@@ -1725,6 +1835,8 @@ namespace IMock {
 /// Normally, the compiler fills this buffer. However, IMock instead creates an
 /// object with a pointer to a buffer filled with custom methods that can be
 /// mocked or faked.
+///
+/// @tparam TInterface The type of interface to be mocked.
 template <typename TInterface>
 class Mock {
     private:
@@ -1743,6 +1855,7 @@ class Mock {
         /// The MockCaseID must differ from other mock cases used with the same
         /// Mock.
         /// @return A MockWithID associated with the MockCaseID.
+        /// @tparam id The MockWithID used to identify the mock case to add.
         template <MockCaseID id>
         MockWithID<TInterface, id> withCounter() {
             // Create an return a MockWithID with _innerMock.
