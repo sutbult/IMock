@@ -46,6 +46,11 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 });
 
         SECTION("no calls have initially been made") {
+            SECTION("getCallCount() returns 0") {
+                // Perform the call and verify it returns 0.
+                REQUIRE(mockCaseCallCount.getCallCount() == 0);
+            }
+
             SECTION("verifyNeverCalled() does not throw any exception") {
                 // Perform the call and verify it does not throw an exception.
                 REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
@@ -60,6 +65,23 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                     Catch::Message("Expected the method to be called 1 time "
                         "but it was called 0 times."));
             }
+
+            SECTION("verifyCallCount(0) does not throw any exception") {
+                // Perform the call and verify it does not throw an
+                // exception.
+                REQUIRE_NOTHROW(mockCaseCallCount.verifyCallCount(0));
+            }
+
+            SECTION("verifyCallCount(2) throws a "
+                "WrongCallCountException") {
+                // Perform the call and verify it throws a
+                // WrongCallCountException.
+                REQUIRE_THROWS_MATCHES(
+                    mockCaseCallCount.verifyCallCount(2),
+                    IMock::Exception::WrongCallCountException,
+                    Catch::Message("Expected the method to be called 2 "
+                        "times but it was called 0 times."));
+            }
         }
 
         SECTION("call add with the mocked values") {
@@ -72,6 +94,11 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             }
 
             SECTION("the call count is one") {
+                SECTION("getCallCount() returns 1") {
+                    // Perform the call and verify it returns 1.
+                    REQUIRE(mockCaseCallCount.getCallCount() == 1);
+                }
+
                 SECTION("verifyCalledOnce() does not throw any exception") {
                     // Perform the call and verify it does not throw an
                     // exception.
@@ -86,6 +113,23 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                         mockCaseCallCount.verifyNeverCalled(),
                         IMock::Exception::WrongCallCountException,
                         Catch::Message("Expected the method to be called 0 "
+                            "times but it was called 1 time."));
+                }
+
+                SECTION("verifyCallCount(1) does not throw any exception") {
+                    // Perform the call and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCallCount(1));
+                }
+
+                SECTION("verifyCallCount(2) throws a "
+                    "WrongCallCountException") {
+                    // Perform the call and verify it throws a
+                    // WrongCallCountException.
+                    REQUIRE_THROWS_MATCHES(
+                        mockCaseCallCount.verifyCallCount(2),
+                        IMock::Exception::WrongCallCountException,
+                        Catch::Message("Expected the method to be called 2 "
                             "times but it was called 1 time."));
                 }
             }
