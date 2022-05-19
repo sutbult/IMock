@@ -464,8 +464,16 @@ TEST_CASE("can mock an interface where every argument and return value is a "
             .returns(two);
 
         SECTION("call add with the mocked values") {
-            // Call add with the mocked values.
-            const int& result = mock.get().add(one, one);
+            // Call add within a lambda.
+            const int& result = ([&]() {
+                // However, values used to call mocked methods only needs to be
+                // kept alive for the duration of the call and can be safely
+                // deleted afterwards.
+                int scopedOne = 1;
+
+                // Call add with the scoped one.
+                return mock.get().add(scopedOne, scopedOne);
+            })();
 
             SECTION("the result is correct") {
                 // Verify the result equals two.
