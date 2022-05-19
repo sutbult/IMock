@@ -146,16 +146,16 @@ docker-build:
 
 # Builds the program and runs the automatic tests inside a Docker container.
 docker-test: docker-build
-	docker run -t imock make test
+	docker run --rm -t imock make test
 
 # Builds the program and runs the benchmarks inside a Docker container.
 docker-benchmark: docker-build
-	docker run -t imock make benchmark
+	docker run --rm -t imock make benchmark
 
 # Builds the program and runs all types of automatic tests inside a Docker
 # container.
 docker-test-all: docker-build
-	docker run -t imock make test-all
+	docker run --rm -t imock make test-all
 
 # Builds the documentation with Doxygen.
 docs:
