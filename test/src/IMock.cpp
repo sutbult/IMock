@@ -454,7 +454,7 @@ TEST_CASE("can mock an interface where every argument and return value is a "
         // Declare variables for one and two. It is necessary to keep the memory
         // containing used test values alive for the duration of the test since
         // IMock only stores references to values if arguments and/or return
-        // values is declared as references.
+        // values are declared as references.
         int one = 1;
         int two = 2;
 
