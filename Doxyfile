@@ -1,5 +1,5 @@
-# The project name is IFake
-PROJECT_NAME = IFake
+# The project name is IMock
+PROJECT_NAME = IMock
 
 # Include the include and test folders in the documentation.
 INPUT = include test
