@@ -776,17 +776,17 @@ class NoCopy {
 };
 
 // An interface using NoCopy as arguments and return values.
-class INoCopyArgument {
+class INoCopy {
     public:
         virtual void setInt(NoCopy) = 0;
         virtual NoCopy getInt() = 0;
         virtual NoCopy id(NoCopy) = 0;
 };
 
-TEST_CASE("can mock an interface with an argument that can't be copied",
-    "[no_copy_argument]") {
-    // Create a Mock of INoCopyArgument.
-    IMock::Mock<INoCopyArgument> mock;
+TEST_CASE("can mock an interface with arguments and return values that can't "
+    "be copied", "[no_copy]") {
+    // Create a Mock of INoCopy.
+    IMock::Mock<INoCopy> mock;
 
     SECTION("call setInt when it has not been mocked") {
         // Perform the call and verify it throws an UnknownCallException.
