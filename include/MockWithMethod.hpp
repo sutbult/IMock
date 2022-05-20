@@ -62,9 +62,9 @@ class MockWithMethod {
         /// Adds a fake handling the method call.
         ///
         /// @param fake A callback to call when the method is called.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
-        MockCaseCallCount fake(std::function<TReturn (TArguments...)> fake) {
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
+        CallCount fake(std::function<TReturn (TArguments...)> fake) {
             // Create a MockWithMethodCase.
             std::unique_ptr<Internal::ICase<TReturn, TArguments...>> mockCase
                 = Internal::makeUnique<Internal::MockWithMethodCase<

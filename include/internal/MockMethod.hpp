@@ -6,10 +6,10 @@
 #include <internal/ICase.hpp>
 #include <internal/IMockMethodNonGeneric.hpp>
 #include <internal/JoinStrings.hpp>
-#include <internal/MockCaseMutableCallCount.hpp>
+#include <internal/MutableCallCount.hpp>
 #include <internal/makeUnique.hpp>
 #include <internal/ToString.hpp>
-#include <MockCaseCallCount.hpp>
+#include <CallCount.hpp>
 
 namespace IMock {
 namespace Internal {
@@ -27,9 +27,9 @@ class MockMethod : public IMockMethodNonGeneric {
                 /// The mock case's ICase.
                 std::unique_ptr<ICase<TReturn, TArguments...>> _mockCase;
 
-                /// A MockCaseMutableCallCount keeping track of how many times
-                /// the mock case has been called.
-                std::shared_ptr<MockCaseMutableCallCount> _callCount;
+                /// A MutableCallCount keeping track of how many times the mock
+                /// case has been called.
+                std::shared_ptr<MutableCallCount> _callCount;
 
                 /// The next mock case.
                 std::unique_ptr<InnerMockCase> _next;
@@ -37,12 +37,12 @@ class MockMethod : public IMockMethodNonGeneric {
                 /// Creates a InnerMockCase.
                 ///
                 /// @param mockCase The mock case's ICase.
-                /// @param callCount A MockCaseMutableCallCount keeping track of
-                /// how many times the mock case has been called.
+                /// @param callCount A MutableCallCount keeping track of how
+                /// many times the mock case has been called.
                 /// @param next The next mock case.
                 InnerMockCase(
                     std::unique_ptr<ICase<TReturn, TArguments...>> mockCase,
-                    std::shared_ptr<MockCaseMutableCallCount> callCount,
+                    std::shared_ptr<MutableCallCount> callCount,
                     std::unique_ptr<InnerMockCase> next)
                     : _mockCase(std::move(mockCase))
                     , _callCount(std::move(callCount))
@@ -89,11 +89,11 @@ class MockMethod : public IMockMethodNonGeneric {
         /// Adds a new mock case.
         ///
         /// @param mockCase A mock case to add.
-        MockCaseCallCount addCase(
+        CallCount addCase(
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
-            // Create a MockCaseMutableCallCount for the mock case.
-            std::shared_ptr<MockCaseMutableCallCount> callCountPointer
-                = std::make_shared<MockCaseMutableCallCount>();
+            // Create a MutableCallCount for the mock case.
+            std::shared_ptr<MutableCallCount> callCountPointer
+                = std::make_shared<MutableCallCount>();
 
             // Create a InnerMockCase and assign it to _topMockCase.
             _topMockCase = Internal::makeUnique<InnerMockCase>(
@@ -101,10 +101,10 @@ class MockMethod : public IMockMethodNonGeneric {
                 callCountPointer,
                 std::move(_topMockCase));
 
-            // Create a MockCaseCallCount for the mock case.
-            MockCaseCallCount callCount(callCountPointer);
+            // Create a CallCount for the mock case.
+            CallCount callCount(callCountPointer);
 
-            // Return the MockCaseCallCount.
+            // Return the CallCount.
             return callCount;
         }
 

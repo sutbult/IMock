@@ -2,7 +2,7 @@
 
 /*
 IMock 1.0.0
-Generated 2022-05-16 20:47:41.744244 UTC
+Generated 2022-05-20 16:49:13.644184 UTC
 
 MIT License
 
@@ -431,15 +431,14 @@ namespace IMock {
 namespace Internal {
 
 /// Contains a call count that can be increased and retrieved.
-class MockCaseMutableCallCount {
+class MutableCallCount {
     private:
         // The call count.
         int _callCount;
 
     public:
-        /// Creates a MockCaseMutableCallCount by initializing the call count
-        /// with zero.
-        MockCaseMutableCallCount()
+        /// Creates a MutableCallCount by initializing the call count with zero.
+        MutableCallCount()
             : _callCount(0) {
         }
 
@@ -626,18 +625,17 @@ namespace IMock {
 
 /// Is used to access the number of times a mock case has been called or to
 /// verify that a mock case has been called a certain number of times.
-class MockCaseCallCount {
+class CallCount {
     private:
-        /// A pointer to a MockCaseMutableCallCount containing the call count.
-        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
+        /// A pointer to a MutableCallCount containing the call count.
+        std::shared_ptr<Internal::MutableCallCount> _callCount;
 
     public:
-        /// Creates a MockCaseCallCount.
+        /// Creates a CallCount.
         ///
-        /// @param callCount A MockCaseMutableCallCount to get the call count
-        /// from.
-        MockCaseCallCount(
-            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount) 
+        /// @param callCount A MutableCallCount to get the call count from.
+        CallCount(
+            std::shared_ptr<Internal::MutableCallCount> callCount) 
             : _callCount(std::move(callCount)) {
         }
 
@@ -708,9 +706,9 @@ class MockMethod : public IMockMethodNonGeneric {
                 /// The mock case's ICase.
                 std::unique_ptr<ICase<TReturn, TArguments...>> _mockCase;
 
-                /// A MockCaseMutableCallCount keeping track of how many times
-                /// the mock case has been called.
-                std::shared_ptr<MockCaseMutableCallCount> _callCount;
+                /// A MutableCallCount keeping track of how many times the mock
+                /// case has been called.
+                std::shared_ptr<MutableCallCount> _callCount;
 
                 /// The next mock case.
                 std::unique_ptr<InnerMockCase> _next;
@@ -718,12 +716,12 @@ class MockMethod : public IMockMethodNonGeneric {
                 /// Creates a InnerMockCase.
                 ///
                 /// @param mockCase The mock case's ICase.
-                /// @param callCount A MockCaseMutableCallCount keeping track of
-                /// how many times the mock case has been called.
+                /// @param callCount A MutableCallCount keeping track of how
+                /// many times the mock case has been called.
                 /// @param next The next mock case.
                 InnerMockCase(
                     std::unique_ptr<ICase<TReturn, TArguments...>> mockCase,
-                    std::shared_ptr<MockCaseMutableCallCount> callCount,
+                    std::shared_ptr<MutableCallCount> callCount,
                     std::unique_ptr<InnerMockCase> next)
                     : _mockCase(std::move(mockCase))
                     , _callCount(std::move(callCount))
@@ -770,11 +768,11 @@ class MockMethod : public IMockMethodNonGeneric {
         /// Adds a new mock case.
         ///
         /// @param mockCase A mock case to add.
-        MockCaseCallCount addCase(
+        CallCount addCase(
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
-            // Create a MockCaseMutableCallCount for the mock case.
-            std::shared_ptr<MockCaseMutableCallCount> callCountPointer
-                = std::make_shared<MockCaseMutableCallCount>();
+            // Create a MutableCallCount for the mock case.
+            std::shared_ptr<MutableCallCount> callCountPointer
+                = std::make_shared<MutableCallCount>();
 
             // Create a InnerMockCase and assign it to _topMockCase.
             _topMockCase = Internal::makeUnique<InnerMockCase>(
@@ -782,10 +780,10 @@ class MockMethod : public IMockMethodNonGeneric {
                 callCountPointer,
                 std::move(_topMockCase));
 
-            // Create a MockCaseCallCount for the mock case.
-            MockCaseCallCount callCount(callCountPointer);
+            // Create a CallCount for the mock case.
+            CallCount callCount(callCountPointer);
 
-            // Return the MockCaseCallCount.
+            // Return the CallCount.
             return callCount;
         }
 
@@ -1268,14 +1266,14 @@ class InnerMock {
         /// @param methodString A string describing how a call is made to the
         /// method being mocked.
         /// @param mockCase The mock case to add.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
         /// @tparam id The MockWithID used to identify the mock case to add.
         /// @tparam TReturn The return type of the method being mocked.
         /// @tparam TArguments The types of the arguments to the method being
         /// mocked.
         template <MockCaseID id, typename TReturn, typename ...TArguments>
-        MockCaseCallCount addCase(
+        CallCount addCase(
             Method<TInterface, TReturn, TArguments...> method,
             std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
@@ -1299,13 +1297,13 @@ class InnerMock {
         /// @param methodString A string describing how a call is made to the
         /// method being mocked.
         /// @param mockCase The mock case to add.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
         /// @tparam TReturn The return type of the method being mocked.
         /// @tparam TArguments The types of the arguments to the method being
         /// mocked.
         template <typename TReturn, typename ...TArguments>
-        MockCaseCallCount addCaseWithOnCall(
+        CallCount addCaseWithOnCall(
             MockCaseID id,
             Method<MockFake, TReturn, TArguments...> onCall,
             Method<TInterface, TReturn, TArguments...> method,
@@ -1624,12 +1622,12 @@ class MockWithArguments {
         /// The method is available unless the return type is void. 
         ///
         /// @param returnValue The value to return when a match happens.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
         /// @tparam R The return type of the method as infered from TReturn.
         /// Do not override it.
         template<typename R = TReturn>
-        MockCaseCallCount returns(
+        CallCount returns(
             typename std::enable_if<!std::is_void<R>::value, TReturn>::type
                 returnValue) {
             // Wrap the return value in a tuple. Otherwise, reference values
@@ -1654,13 +1652,13 @@ class MockWithArguments {
         ///
         /// The method is only available if the return type is void.
         ///
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
         /// @tparam R The return type of the method as infered from TReturn.
         /// Do not override it.
         template<typename R = TReturn,
             typename std::enable_if<std::is_void<R>::value, R>::type* = nullptr>
-        MockCaseCallCount returns() {
+        CallCount returns() {
             // Create a fake.
             std::function<Internal::CaseMatch<TReturn>
                 (std::tuple<TArguments...>)> fake
@@ -1678,9 +1676,9 @@ class MockWithArguments {
         ///
         /// @param fake A callback to call when the method is called and a match
         /// happens.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
-        MockCaseCallCount fake(std::function<TReturn (TArguments...)> fake) {
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
+        CallCount fake(std::function<TReturn (TArguments...)> fake) {
             // Call fakeGeneral with a fake.
             return fakeGeneral([fake](std::tuple<TArguments...> arguments) {
                 // Return a CaseMatch for the fake.
@@ -1695,9 +1693,9 @@ class MockWithArguments {
         /// to fake when called with the associated arguments.
         ///
         /// @param fake A callback to be called when a match happens.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
-        MockCaseCallCount fakeGeneral(
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
+        CallCount fakeGeneral(
             std::function<Internal::CaseMatch<TReturn>
                 (std::tuple<TArguments...>)> fake) {
             // Check if the instance already has been used.
@@ -1788,9 +1786,9 @@ class MockWithMethod {
         /// Adds a fake handling the method call.
         ///
         /// @param fake A callback to call when the method is called.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
-        MockCaseCallCount fake(std::function<TReturn (TArguments...)> fake) {
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
+        CallCount fake(std::function<TReturn (TArguments...)> fake) {
             // Create a MockWithMethodCase.
             std::unique_ptr<Internal::ICase<TReturn, TArguments...>> mockCase
                 = Internal::makeUnique<Internal::MockWithMethodCase<

@@ -37,7 +37,7 @@ Then, instruct the interface to return a certain value when `add` is called with
 certain arguments:
 
 ```
-MockCaseCallCount callCount = when(mock, add).with(1, 1).returns(2);
+CallCount callCount = when(mock, add).with(1, 1).returns(2);
 ```
 
 `callCount` will be used later.
@@ -73,7 +73,7 @@ or if `add` had been called more than once.
 yourself:
 
 ```
-MockCaseCallCount callCount = when(mock, add).with(1, 1).fake([](int a, int b) {
+CallCount callCount = when(mock, add).with(1, 1).fake([](int a, int b) {
     return a + b;
 });
 ```
@@ -83,7 +83,7 @@ The behavior will be identical to the basic example as seen above.
 `fake` can be called without calling `with`:
 
 ```
-MockCaseCallCount callCount = when(mock, add).fake([](int a, int b) {
+CallCount callCount = when(mock, add).fake([](int a, int b) {
     return a + b;
 });
 ```
@@ -142,7 +142,7 @@ Mock<ICalculator> mock;
 int one = 1;
 int two = 2;
 
-MockCaseCallCount callCount = when(mock, add).with(one, one).returns(two);
+CallCount callCount = when(mock, add).with(one, one).returns(two);
 
 {
     int scopedOne = 1;
@@ -177,7 +177,7 @@ Mock<INoArguments> mock;
 In this case, call `with` without any arguments:
 
 ```
-MockCaseCallCount callCount = when(mock, getInt).with().returns(1);
+CallCount callCount = when(mock, getInt).with().returns(1);
 
 // Prints 2.
 cout << mock.get().getInt() << endl;
@@ -203,7 +203,7 @@ Mock<INoReturnValue> mock;
 In this case, call `returns` without a return value:
 
 ```
-MockCaseCallCount callCount = when(mock, setInt).with(1).returns();
+CallCount callCount = when(mock, setInt).with(1).returns();
 
 mock.get().setInt(1);
 
@@ -249,7 +249,7 @@ Arguments without copy constructors are supported as long as IMock is allowed to
 own the arguments:
 
 ```
-MockCaseCallCount callCount = when(mock, setInt).with(NoCopy(1)).returns()
+CallCount callCount = when(mock, setInt).with(NoCopy(1)).returns()
 ```
 
 `setInt` can now be called with another instance of `NoCopy` provided the
@@ -264,7 +264,7 @@ However, `fake` must be used in this case as it has to be possible to return any
 value given to `returns` more than once:
 
 ```
-MockCaseCallCount callCount = when(mock, getInt).with().fake([]() {
+CallCount callCount = when(mock, getInt).with().fake([]() {
     return NoCopy(1);
 });
 ```

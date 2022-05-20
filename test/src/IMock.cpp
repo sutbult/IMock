@@ -32,7 +32,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
         bool withReturns = GENERATE(true, false);
 
         // Mock add.
-        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+        IMock::CallCount callCount = withReturns
             // Use returns if withReturns is true.
             ? when(mock, add)
                 .with(1, 1)
@@ -48,19 +48,19 @@ TEST_CASE("can mock a basic interface", "[basic]") {
         SECTION("no calls have initially been made") {
             SECTION("getCallCount() returns 0") {
                 // Perform the call and verify it returns 0.
-                REQUIRE(mockCaseCallCount.getCallCount() == 0);
+                REQUIRE(callCount.getCallCount() == 0);
             }
 
             SECTION("verifyNeverCalled() does not throw any exception") {
                 // Perform the call and verify it does not throw an exception.
-                REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                REQUIRE_NOTHROW(callCount.verifyNeverCalled());
             }
 
             SECTION("verifyCalledOnce() throws a WrongCallCountException") {
                 // Perform the call and verify it throws a
                 // WrongCallCountException.
                 REQUIRE_THROWS_MATCHES(
-                    mockCaseCallCount.verifyCalledOnce(),
+                    callCount.verifyCalledOnce(),
                     IMock::Exception::WrongCallCountException,
                     Catch::Message("Expected the method to be called 1 time "
                         "but it was called 0 times."));
@@ -69,7 +69,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             SECTION("verifyCallCount(0) does not throw any exception") {
                 // Perform the call and verify it does not throw an
                 // exception.
-                REQUIRE_NOTHROW(mockCaseCallCount.verifyCallCount(0));
+                REQUIRE_NOTHROW(callCount.verifyCallCount(0));
             }
 
             SECTION("verifyCallCount(2) throws a "
@@ -77,7 +77,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 // Perform the call and verify it throws a
                 // WrongCallCountException.
                 REQUIRE_THROWS_MATCHES(
-                    mockCaseCallCount.verifyCallCount(2),
+                    callCount.verifyCallCount(2),
                     IMock::Exception::WrongCallCountException,
                     Catch::Message("Expected the method to be called 2 "
                         "times but it was called 0 times."));
@@ -96,13 +96,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             SECTION("the call count is one") {
                 SECTION("getCallCount() returns 1") {
                     // Perform the call and verify it returns 1.
-                    REQUIRE(mockCaseCallCount.getCallCount() == 1);
+                    REQUIRE(callCount.getCallCount() == 1);
                 }
 
                 SECTION("verifyCalledOnce() does not throw any exception") {
                     // Perform the call and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCount.verifyCalledOnce());
                 }
 
                 SECTION("verifyNeverCalled() throws a "
@@ -110,7 +110,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                     // Perform the call and verify it throws a
                     // WrongCallCountException.
                     REQUIRE_THROWS_MATCHES(
-                        mockCaseCallCount.verifyNeverCalled(),
+                        callCount.verifyNeverCalled(),
                         IMock::Exception::WrongCallCountException,
                         Catch::Message("Expected the method to be called 0 "
                             "times but it was called 1 time."));
@@ -119,7 +119,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 SECTION("verifyCallCount(1) does not throw any exception") {
                     // Perform the call and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCallCount(1));
+                    REQUIRE_NOTHROW(callCount.verifyCallCount(1));
                 }
 
                 SECTION("verifyCallCount(2) throws a "
@@ -127,7 +127,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                     // Perform the call and verify it throws a
                     // WrongCallCountException.
                     REQUIRE_THROWS_MATCHES(
-                        mockCaseCallCount.verifyCallCount(2),
+                        callCount.verifyCallCount(2),
                         IMock::Exception::WrongCallCountException,
                         Catch::Message("Expected the method to be called 2 "
                             "times but it was called 1 time."));
@@ -155,7 +155,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
 
         SECTION("mock add again") {
             // Mock add with other values.
-            IMock::MockCaseCallCount mockCaseCallCountSecond = when(mock, add)
+            IMock::CallCount callCountSecond = when(mock, add)
                 .with(2, 2)
                 .returns(5);
 
@@ -171,13 +171,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCountSecond.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the first mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                    REQUIRE_NOTHROW(callCount.verifyNeverCalled());
                 }
             }
 
@@ -193,13 +193,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCount.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the second mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                    REQUIRE_NOTHROW(callCountSecond
                         .verifyNeverCalled());
                 }
             }
@@ -207,7 +207,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
 
         SECTION("mock subtract") {
             // Mock subtract.
-            IMock::MockCaseCallCount mockCaseCallCountSecond =
+            IMock::CallCount callCountSecond =
                 when(mock, subtract)
                     .with(1, 1)
                     .returns(0);
@@ -224,13 +224,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCountSecond.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the first mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                    REQUIRE_NOTHROW(callCount.verifyNeverCalled());
                 }
             }
 
@@ -246,13 +246,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCount.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the second mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                    REQUIRE_NOTHROW(callCountSecond
                         .verifyNeverCalled());
                 }
             }
@@ -260,13 +260,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
     }
 
     SECTION("mock add in a loop") {
-        // Create a vector for the MockCaseCallCount instances.
-        std::vector<IMock::MockCaseCallCount> mockCaseCallCounts;
+        // Create a vector for the CallCount instances.
+        std::vector<IMock::CallCount> callCounts;
 
         // Iterate twice.
         for(int i = 0; i < 2; i++) {
             // Mock add.
-            mockCaseCallCounts.push_back(when(mock, add)
+            callCounts.push_back(when(mock, add)
                 .with(i, i)
                 .returns(i * 2));
         }
@@ -286,7 +286,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             SECTION("the call count is one") {
                 // Call verifyCalledOnce and verify it does not throw an
                 // exception.
-                REQUIRE_NOTHROW(mockCaseCallCounts[i].verifyCalledOnce());
+                REQUIRE_NOTHROW(callCounts[i].verifyCalledOnce());
             }
         }
     }
@@ -310,7 +310,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
 
     SECTION("mock add with fake") {
         // Mock add.
-        IMock::MockCaseCallCount mockCaseCallCount = when(mock, add)
+        IMock::CallCount callCount = when(mock, add)
             .fake([](int a, int b) {
                 return a + b;
             });
@@ -347,7 +347,7 @@ TEST_CASE("can mock a basic interface", "[basic]") {
             SECTION("the call count is one") {
                 // Call verifyCalledOnce and verify it does not throw an
                 // exception.
-                REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                REQUIRE_NOTHROW(callCount.verifyCalledOnce());
             }
 
             SECTION("call add again") {
@@ -374,14 +374,14 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 SECTION("the call count is one") {
                     // Call verifyCallCount(2) and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCallCount(2));
+                    REQUIRE_NOTHROW(callCount.verifyCallCount(2));
                 }
             }
         }
 
         SECTION("mock add again") {
             // Mock add with other values.
-            IMock::MockCaseCallCount mockCaseCallCountSecond = when(mock, add)
+            IMock::CallCount callCountSecond = when(mock, add)
                 .with(2, 2)
                 .returns(5);
 
@@ -400,13 +400,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCountSecond.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the first mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                    REQUIRE_NOTHROW(callCount.verifyNeverCalled());
                 }
             }
 
@@ -422,13 +422,13 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCount.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the second mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                    REQUIRE_NOTHROW(callCountSecond
                         .verifyNeverCalled());
                 }
             }
@@ -459,7 +459,7 @@ TEST_CASE("can mock an interface where every argument and return value is a "
         int two = 2;
 
         // Mock add.
-        IMock::MockCaseCallCount mockCaseCallCount = when(mock, add)
+        IMock::CallCount callCount = when(mock, add)
             .with(one, one)
             .returns(two);
 
@@ -483,7 +483,7 @@ TEST_CASE("can mock an interface where every argument and return value is a "
             SECTION("the call count is one") {
                 // Call verifyCalledOnce and verify it does not throw an
                 // exception.
-                REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                REQUIRE_NOTHROW(callCount.verifyCalledOnce());
             }
         }
 
@@ -492,7 +492,7 @@ TEST_CASE("can mock an interface where every argument and return value is a "
             int five = 5;
 
             // Mock add with other values.
-            IMock::MockCaseCallCount mockCaseCallCountSecond = when(mock, add)
+            IMock::CallCount callCountSecond = when(mock, add)
                 .with(two, two)
                 .returns(five);
 
@@ -508,13 +508,13 @@ TEST_CASE("can mock an interface where every argument and return value is a "
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCountSecond.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the first mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                    REQUIRE_NOTHROW(callCount.verifyNeverCalled());
                 }
             }
 
@@ -530,13 +530,13 @@ TEST_CASE("can mock an interface where every argument and return value is a "
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCount.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the second mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                    REQUIRE_NOTHROW(callCountSecond
                         .verifyNeverCalled());
                 }
             }
@@ -568,7 +568,7 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
         bool withReturns = GENERATE(true, false);
 
         // Mock getInt.
-        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+        IMock::CallCount callCount = withReturns
             // Use returns if withReturns is true.
             ? when(mock, getInt)
                 .with()
@@ -583,7 +583,7 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
 
         SECTION("no calls have initially been made") {
             // Call verifyNeverCalled and verify it does not throw an exception.
-            REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+            REQUIRE_NOTHROW(callCount.verifyNeverCalled());
         }
 
         SECTION("call getInt") {
@@ -598,13 +598,13 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
             SECTION("the call count is one") {
                 // Call verifyNeverCalled and verify it does not throw an
                 // exception.
-                REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                REQUIRE_NOTHROW(callCount.verifyCalledOnce());
             }
         }
 
         SECTION("mock getInt again") {
             // Mock getInt with other values.
-            IMock::MockCaseCallCount mockCaseCallCountSecond =
+            IMock::CallCount callCountSecond =
                 when(mock, getInt)
                     .with()
                     .returns(2);
@@ -621,13 +621,13 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCountSecond.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the first mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                    REQUIRE_NOTHROW(callCount.verifyNeverCalled());
                 }
             }
         }
@@ -659,7 +659,7 @@ TEST_CASE("can mock an interface without any return value",
         bool withReturns = GENERATE(true, false);
 
         // Mock setInt.
-        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+        IMock::CallCount callCount = withReturns
             // Use returns if withReturns is true.
             ? when(mock, setInt)
                 .with(1)
@@ -673,7 +673,7 @@ TEST_CASE("can mock an interface without any return value",
 
         SECTION("no calls have initially been made") {
             // Call verifyNeverCalled and verify it does not throw an exception.
-            REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+            REQUIRE_NOTHROW(callCount.verifyNeverCalled());
         }
 
         SECTION("call setInt with the mocked values") {
@@ -683,7 +683,7 @@ TEST_CASE("can mock an interface without any return value",
             SECTION("the call count is one") {
                 // Call verifyCalledOnce and verify it does not throw an
                 // exception.
-                REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                REQUIRE_NOTHROW(callCount.verifyCalledOnce());
             }
         }
 
@@ -698,7 +698,7 @@ TEST_CASE("can mock an interface without any return value",
 
         SECTION("mock setInt again") {
             // Mock setInt with another value.
-            IMock::MockCaseCallCount mockCaseCallCountSecond =
+            IMock::CallCount callCountSecond =
                 when(mock, setInt)
                     .with(2)
                     .returns();
@@ -710,13 +710,13 @@ TEST_CASE("can mock an interface without any return value",
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCountSecond.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the first mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                    REQUIRE_NOTHROW(callCount.verifyNeverCalled());
                 }
             }
 
@@ -727,13 +727,13 @@ TEST_CASE("can mock an interface without any return value",
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCount.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the second mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                    REQUIRE_NOTHROW(callCountSecond
                         .verifyNeverCalled());
                 }
             }
@@ -802,7 +802,7 @@ TEST_CASE("can mock an interface with arguments and return values that can't "
         bool withReturns = GENERATE(true, false);
 
         // Mock setInt.
-        IMock::MockCaseCallCount mockCaseCallCount = withReturns
+        IMock::CallCount callCount = withReturns
             // Use returns if withReturns is true.
             ? when(mock, setInt)
                 .with(NoCopy(1))
@@ -816,7 +816,7 @@ TEST_CASE("can mock an interface with arguments and return values that can't "
 
         SECTION("no calls have initially been made") {
             // Call verifyNeverCalled and verify it does not throw an exception.
-            REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+            REQUIRE_NOTHROW(callCount.verifyNeverCalled());
         }
 
         SECTION("call setInt with the mocked values") {
@@ -826,7 +826,7 @@ TEST_CASE("can mock an interface with arguments and return values that can't "
             SECTION("the call count is one") {
                 // Call verifyCalledOnce and verify it does not throw an
                 // exception.
-                REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                REQUIRE_NOTHROW(callCount.verifyCalledOnce());
             }
         }
 
@@ -841,7 +841,7 @@ TEST_CASE("can mock an interface with arguments and return values that can't "
 
         SECTION("mock setInt again") {
             // Mock setInt with another value.
-            IMock::MockCaseCallCount mockCaseCallCountSecond =
+            IMock::CallCount callCountSecond =
                 when(mock, setInt)
                     .with(NoCopy(2))
                     .returns();
@@ -853,13 +853,13 @@ TEST_CASE("can mock an interface with arguments and return values that can't "
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCountSecond.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the first mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                    REQUIRE_NOTHROW(callCount.verifyNeverCalled());
                 }
             }
 
@@ -870,13 +870,13 @@ TEST_CASE("can mock an interface with arguments and return values that can't "
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCount.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the second mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                    REQUIRE_NOTHROW(callCountSecond
                         .verifyNeverCalled());
                 }
             }
@@ -887,7 +887,7 @@ TEST_CASE("can mock an interface with arguments and return values that can't "
             bool withGetInt = GENERATE(true, false);
 
             // Mock id.
-            IMock::MockCaseCallCount mockCaseCallCountSecond = withGetInt
+            IMock::CallCount callCountSecond = withGetInt
                 // Mock getInt if withGetInt is true.
                 ? when(mock, getInt)
                     .with()
@@ -921,13 +921,13 @@ TEST_CASE("can mock an interface with arguments and return values that can't "
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCountSecond.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the first mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyNeverCalled());
+                    REQUIRE_NOTHROW(callCount.verifyNeverCalled());
                 }
             }
 
@@ -938,13 +938,13 @@ TEST_CASE("can mock an interface with arguments and return values that can't "
                 SECTION("the call count is one") {
                     // Call verifyCalledOnce and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCount.verifyCalledOnce());
+                    REQUIRE_NOTHROW(callCount.verifyCalledOnce());
                 }
 
                 SECTION("the call count for the second mock is zero") {
                     // Call verifyNeverCalled and verify it does not throw an
                     // exception.
-                    REQUIRE_NOTHROW(mockCaseCallCountSecond
+                    REQUIRE_NOTHROW(callCountSecond
                         .verifyNeverCalled());
                 }
             }
@@ -979,7 +979,7 @@ TEST_CASE("benchmark", "[.][benchmark]") {
                 IMock::Mock<IIdentity> mock;
 
                 // Mock id for 0.
-                IMock::MockCaseCallCount mockCaseCallCount = when(mock, id)
+                IMock::CallCount callCount = when(mock, id)
                     .with(0)
                     .returns(0);
 
@@ -995,7 +995,7 @@ TEST_CASE("benchmark", "[.][benchmark]") {
                 mock.get().id(0);
 
                 // Verify id has been called once with 0.
-                mockCaseCallCount.verifyCalledOnce();
+                callCount.verifyCalledOnce();
             }
     };
 
