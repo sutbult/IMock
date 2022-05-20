@@ -1,6 +1,6 @@
 # IMock
 
-[![Build](https://github.com/sutbult/IMock/actions/workflows/docker-test.yml/badge.svg)](https://github.com/sutbult/IMock/actions)
+[![Build](https://github.com/sutbult/IMock/actions/workflows/build.yml/badge.svg)](https://github.com/sutbult/IMock/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 IMock is a C++11 mocking library for interfaces.
