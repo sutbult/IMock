@@ -3,24 +3,23 @@
 #include <memory>
 
 #include <exception/WrongCallCountException.hpp>
-#include <internal/MockCaseMutableCallCount.hpp>
+#include <internal/MutableCallCount.hpp>
 
 namespace IMock {
 
 /// Is used to access the number of times a mock case has been called or to
 /// verify that a mock case has been called a certain number of times.
-class MockCaseCallCount {
+class CallCount {
     private:
-        /// A pointer to a MockCaseMutableCallCount containing the call count.
-        std::shared_ptr<Internal::MockCaseMutableCallCount> _callCount;
+        /// A pointer to a MutableCallCount containing the call count.
+        std::shared_ptr<Internal::MutableCallCount> _callCount;
 
     public:
-        /// Creates a MockCaseCallCount.
+        /// Creates a CallCount.
         ///
-        /// @param callCount A MockCaseMutableCallCount to get the call count
-        /// from.
-        MockCaseCallCount(
-            std::shared_ptr<Internal::MockCaseMutableCallCount> callCount) 
+        /// @param callCount A MutableCallCount to get the call count from.
+        CallCount(
+            std::shared_ptr<Internal::MutableCallCount> callCount) 
             : _callCount(std::move(callCount)) {
         }
 

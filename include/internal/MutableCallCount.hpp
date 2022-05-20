@@ -4,15 +4,14 @@ namespace IMock {
 namespace Internal {
 
 /// Contains a call count that can be increased and retrieved.
-class MockCaseMutableCallCount {
+class MutableCallCount {
     private:
         // The call count.
         int _callCount;
 
     public:
-        /// Creates a MockCaseMutableCallCount by initializing the call count
-        /// with zero.
-        MockCaseMutableCallCount()
+        /// Creates a MutableCallCount by initializing the call count with zero.
+        MutableCallCount()
             : _callCount(0) {
         }
 

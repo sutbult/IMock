@@ -110,14 +110,14 @@ class InnerMock {
         /// @param methodString A string describing how a call is made to the
         /// method being mocked.
         /// @param mockCase The mock case to add.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
         /// @tparam id The MockWithID used to identify the mock case to add.
         /// @tparam TReturn The return type of the method being mocked.
         /// @tparam TArguments The types of the arguments to the method being
         /// mocked.
         template <MockCaseID id, typename TReturn, typename ...TArguments>
-        MockCaseCallCount addCase(
+        CallCount addCase(
             Method<TInterface, TReturn, TArguments...> method,
             std::string methodString,
             std::unique_ptr<ICase<TReturn, TArguments...>> mockCase) {
@@ -141,13 +141,13 @@ class InnerMock {
         /// @param methodString A string describing how a call is made to the
         /// method being mocked.
         /// @param mockCase The mock case to add.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
         /// @tparam TReturn The return type of the method being mocked.
         /// @tparam TArguments The types of the arguments to the method being
         /// mocked.
         template <typename TReturn, typename ...TArguments>
-        MockCaseCallCount addCaseWithOnCall(
+        CallCount addCaseWithOnCall(
             MockCaseID id,
             Method<MockFake, TReturn, TArguments...> onCall,
             Method<TInterface, TReturn, TArguments...> method,

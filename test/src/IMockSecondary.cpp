@@ -16,16 +16,16 @@ void mockSecondaryFile() {
     IMock::Mock<ICalculatorSecondary> mock;
 
     // Mock add.
-    IMock::MockCaseCallCount mockCaseCallCount = when(mock, add)
+    IMock::CallCount callCount = when(mock, add)
         .with(1, 1)
         .returns(2);
 
     // Verify the mock case never has been called.
-    mockCaseCallCount.verifyNeverCalled();
+    callCount.verifyNeverCalled();
 
     // Call add with the mocked values.
     mock.get().add(1, 1);
 
     // Verify the mock case has been called once.
-    mockCaseCallCount.verifyCalledOnce();
+    callCount.verifyCalledOnce();
 }

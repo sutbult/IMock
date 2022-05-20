@@ -10,7 +10,7 @@
 #include <internal/makeUnique.hpp>
 #include <internal/MockWithArgumentsCase.hpp>
 #include <Method.hpp>
-#include <MockCaseCallCount.hpp>
+#include <CallCount.hpp>
 #include <MockCaseID.hpp>
 
 namespace IMock {
@@ -69,12 +69,12 @@ class MockWithArguments {
         /// The method is available unless the return type is void. 
         ///
         /// @param returnValue The value to return when a match happens.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
         /// @tparam R The return type of the method as infered from TReturn.
         /// Do not override it.
         template<typename R = TReturn>
-        MockCaseCallCount returns(
+        CallCount returns(
             typename std::enable_if<!std::is_void<R>::value, TReturn>::type
                 returnValue) {
             // Wrap the return value in a tuple. Otherwise, reference values
@@ -99,13 +99,13 @@ class MockWithArguments {
         ///
         /// The method is only available if the return type is void.
         ///
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
         /// @tparam R The return type of the method as infered from TReturn.
         /// Do not override it.
         template<typename R = TReturn,
             typename std::enable_if<std::is_void<R>::value, R>::type* = nullptr>
-        MockCaseCallCount returns() {
+        CallCount returns() {
             // Create a fake.
             std::function<Internal::CaseMatch<TReturn>
                 (std::tuple<TArguments...>)> fake
@@ -123,9 +123,9 @@ class MockWithArguments {
         ///
         /// @param fake A callback to call when the method is called and a match
         /// happens.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
-        MockCaseCallCount fake(std::function<TReturn (TArguments...)> fake) {
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
+        CallCount fake(std::function<TReturn (TArguments...)> fake) {
             // Call fakeGeneral with a fake.
             return fakeGeneral([fake](std::tuple<TArguments...> arguments) {
                 // Return a CaseMatch for the fake.
@@ -140,9 +140,9 @@ class MockWithArguments {
         /// to fake when called with the associated arguments.
         ///
         /// @param fake A callback to be called when a match happens.
-        /// @return A MockCaseCallCount that can be queried about the number of
-        /// calls done to the added mock case.
-        MockCaseCallCount fakeGeneral(
+        /// @return A CallCount that can be queried about the number of calls
+        /// done to the added mock case.
+        CallCount fakeGeneral(
             std::function<Internal::CaseMatch<TReturn>
                 (std::tuple<TArguments...>)> fake) {
             // Check if the instance already has been used.
