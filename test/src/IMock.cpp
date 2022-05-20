@@ -133,6 +133,22 @@ TEST_CASE("can mock a basic interface", "[basic]") {
                             "times but it was called 1 time."));
                 }
             }
+
+            SECTION("call add agin") {
+                // Call add with the mocked values a second time.
+                int result = mock.get().add(1, 1);
+
+                SECTION("the result is correct") {
+                    // Verify the result equals 2.
+                    REQUIRE(result == 2);
+                }
+
+                SECTION("the call count is two") {
+                    // Call verifyCallCount and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(callCount.verifyCallCount(2));
+                }
+            }
         }
 
         SECTION("call add with unmocked values") {
