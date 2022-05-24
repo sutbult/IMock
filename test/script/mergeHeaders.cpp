@@ -131,7 +131,7 @@ vector<string> readFile(string path) {
     // Check if the file is open.
     if(!file.is_open()) {
         // Throw an exception if the file could not be opened.
-        throw Exception("Cannot open file");
+        throw Exception("The file at " + path + " could not be opened.");
     }
 
     // Create a list for the lines.
