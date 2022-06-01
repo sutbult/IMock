@@ -15,8 +15,18 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Test using Docker
-      run: echo "$(bash <(curl -s https://codecov.io/env))" && docker build -t imock . && docker run \
-        $(bash <(curl -s https://codecov.io/env)) \
-        -e CI=true \
-        -t imock \
-        bash -c "make test-all && /codecov"
+      run: |
+        mkdir output |
+        docker build -t imock . && docker run \
+          -t imock \
+          -v "$PWD/output:/output" \
+          bash -c "make test-all && mv lcov.info output" |
+        curl -Os https://uploader.codecov.io/v0.1.0_4653/linux/codecov |
+        chmod +x codecov |
+        ./codecov
+
+#      run: echo "$(bash <(curl -s https://codecov.io/env))" && docker build -t imock . && docker run \
+#        $(bash <(curl -s https://codecov.io/env)) \
+#        -e CI=true \
+#        -t imock \
+#        bash -c "make test-all && /codecov"
