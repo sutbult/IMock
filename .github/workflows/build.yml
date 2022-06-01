@@ -17,5 +17,8 @@ jobs:
     - name: Test using Docker
       run: |
         ci_env=`bash <(curl -s https://codecov.io/env)` |
-        docker build -t imock . && docker run -t imock $ci_env -e CI=true bash \
+        docker build -t imock . && docker run \
+          -t imock \
+          $(echo "$ci_env") \
+          -e CI=true \
           bash -c "make test-all && /codecov"
