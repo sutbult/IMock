@@ -15,4 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Test using Docker
-      run: docker build -t imock . && docker run -t imock make test-all
+      run: |
+        ci_env=`bash <(curl -s https://codecov.io/env)` |
+        docker build -t imock . && docker run -t imock $ci_env -e CI=true bash \
+          bash -c "make test-all && /codecov"
