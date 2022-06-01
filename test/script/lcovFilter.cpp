@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-using std::cout;
-using std::endl;
 using std::exception;
 using std::get;
 using std::ifstream;
@@ -326,6 +324,400 @@ void writeFile(string path, vector<string> lines) {
     file.close();
 }
 
+/// Merges the function coverage of all template versions.
+///
+/// @param coverage The coverage lines to be converted.
+/// @param source The lines in the source file corresponding to the coverage
+/// lines.
+/// @return The converted lines.
+vector<string> convertFunctionLines(
+    vector<string> coverage,
+    const vector<string>& source) {
+    // Create a vector for the converted coverage.
+    vector<string> convertedCoverage;
+
+    // Process each coverage line.
+    for(int i = 0; i < coverage.size();) {
+        // Check if the current line is a function line.
+        if(startsWith("FN:", coverage[i])) {
+            // The number of calls to functions are tracked for each template
+            // version. This means all functions have to be merged to get full
+            // function coverage.
+
+            // Get the first comma of the line.
+            int firstComma = coverage[i].find_first_of(',');
+
+            // Get the line to base a signature on.
+            string signatureLine = coverage[i];
+
+            // Create a signature, i.e. a string describing a FN line with
+            // the current line number.
+            string signature = signatureLine.substr(0, firstComma);
+
+            // Get the function name.
+            string functionName = signatureLine.substr(firstComma + 1);
+
+            // Push the signature line.
+            convertedCoverage.push_back(signatureLine);
+            
+            // Contains the number of calls to the function.
+            int totalCalls = 0;
+
+            // Describes if function calls should continue being squashed.
+            bool squash = true;
+
+            // Increment the line index.
+            i++;
+
+            // Continue while squash is true.
+            while(squash) {
+                // Check if the next coverage line is a line describing the
+                // number of calls to the previously specified function.
+                if(startsWith("FNDA:", coverage[i])) {
+                    // Get the number of calls.
+                    int calls = getFirstValue("FNDA:", coverage[i]);
+
+                    // Add the number of calls to totalCalls.
+                    totalCalls += calls;
+
+                    // Increment the line index.
+                    i++;
+                }
+
+                // Check if the next coverage line starts with the signature.
+                if(startsWith(signature, coverage[i])) {
+                    // Increment the line index.
+                    i++;
+
+                    // This line's FNDA line will be processed during the next
+                    // iteration.
+                }
+                else {
+                    // Break the loop since the line is not related to the
+                    // function.
+                    squash = false;
+                }
+            }
+
+            // Create a stringstream.
+            stringstream out;
+
+            // Create a new FNDA line with the total calls.
+            out << "FNDA:" << totalCalls << "," << functionName;
+
+            // Push the new line.
+            convertedCoverage.push_back(out.str());
+        }
+        else {
+            // Push the line without processing by default.
+            convertedCoverage.push_back(coverage[i]);
+
+            // Increment the line index.
+            i++;
+        }
+    }
+
+    // Return the converted coverage.
+    return convertedCoverage;
+}
+
+/// Removes all lines containing only a closing curly bracket (}) but has no
+/// hits.
+///
+/// @param coverage The coverage lines to be filtered.
+/// @param source The lines in the source file corresponding to the coverage
+/// lines.
+/// @return The filtered lines.
+vector<string> filterZeroHitsCurlyBraces(
+    vector<string> coverage,
+    const vector<string>& source) {
+    // Create a vector for the filtered coverage.
+    vector<string> filteredCoverage;
+
+    // Process each coverage line.
+    for(string coverageLine : coverage) {
+        // Check if the current line is a statement line.
+        if(startsWith("DA:", coverageLine)) {
+            // Get the line number.
+            int line = getFirstValue("DA:", coverageLine);
+
+            // Get the number of hits on the line.
+            int hits = getSecondValue("DA:", coverageLine);
+
+            // Get the source file line corresponding to the line number.
+            string sourceLine = source[line - 1];
+
+            // Remove any uncovered lines starting with } as certain methods
+            // returning values sometimes (especially with Apple clang) reports
+            // these lines as uncovered.
+            if(hits != 0 || !startsWithTrimmed("}", sourceLine)) {
+                filteredCoverage.push_back(coverageLine);
+            }
+        }
+        else {
+            // Keep the current coverage line without processing by default.
+            filteredCoverage.push_back(coverageLine);
+        }
+    }
+
+    // Return the filtered coverage.
+    return filteredCoverage;
+}
+
+/// Removes all BRDA lines not referring to lines starting with "if(".
+///
+/// @param coverage The coverage lines to be filtered.
+/// @param source The lines in the source file corresponding to the coverage
+/// lines.
+/// @return The filtered lines.
+vector<string> filterIfBranches(
+    vector<string> coverage,
+    const vector<string>& source) {
+    // Create a vector for the filtered coverage.
+    vector<string> filteredCoverage;
+
+    // Process each coverage line.
+    for(string coverageLine : coverage) {
+        // Check if the current line is a branch line.
+        if(startsWith("BRDA:", coverageLine)) {
+            // Get the line number.
+            int line = getFirstValue("BRDA:", coverageLine);
+
+            // Get the source file line corresponding to the line number.
+            string sourceLine = source[line - 1];
+
+            // Check if the line starts with "if".
+            if(startsWithTrimmed("if(", sourceLine)) {
+                // Keep the current coverage line.
+                filteredCoverage.push_back(coverageLine);
+            }
+        }
+        else {
+            // Keep the current coverage line without processing by default.
+            filteredCoverage.push_back(coverageLine);
+        }
+    }
+
+    // Return the filtered coverage.
+    return filteredCoverage;
+}
+
+/// Merges the branch coverage of all template versions.
+///
+/// @param coverage The coverage lines to be converted.
+/// @param source The lines in the source file corresponding to the coverage
+/// lines.
+/// @return The converted lines.
+vector<string> convertBranches(
+    vector<string> coverage,
+    const vector<string>& source) {
+    // Create a vector for the converted coverage.
+    vector<string> convertedCoverage;
+
+    // Process each coverage line.
+    for(int i = 0; i < coverage.size();) {
+        // Check if the current line is a branch line.
+        if(startsWith("BRDA:", coverage[i])) {
+            // On macOS, one branch is created for each template version.
+            // This means all branches have to be merged to the true and the
+            // false case to get full branch coverage.
+
+            // Get the line number.
+            int line = getFirstValue("BRDA:", coverage[i]);
+
+            // Get the first comma.
+            int firstComma = coverage[i].find_first_of(',');
+
+            // Create a signature, i.e. a string describing a BRDA line with
+            // the current line number.
+            string signature = coverage[i].substr(0, firstComma);
+
+            // Describes if cases should continue being squashed.
+            bool squash = true;
+
+            // Contains the number of hits on the first branch.
+            int firstBranchHits = 0;
+
+            // Contains the number of hits on the second branch.
+            int secondBranchHits = 0;
+
+            // Create a vector for the DA lines below BRDA lines.
+            std::vector<string> daLines;
+
+            // Continue while squash is true.
+            while(squash) {
+                // Get the BRDA values for the line.
+                tuple<int, int, int, int> values
+                    = getBRDAValues(coverage[i]);
+
+                // Get the branch ID.
+                int branch = get<2>(values);
+
+                // Get the number of hits on the branch.
+                int hits = get<3>(values);
+
+                // The branches of the templates are placed in
+                // succession after each other, which means they
+                // alternate with regards to the actual branches.
+                bool onSecondBranch = branch % 2;
+
+                // Check if the branch is on the second branch.
+                if(onSecondBranch) {
+                    // Add the number of hits to the total number of
+                    // second branch hits.
+                    secondBranchHits += hits;
+                }
+                else {
+                    // Add the number of hits to the total number of
+                    // first branch hits.
+                    firstBranchHits += hits;
+                }
+
+                // Increment the line index.
+                i++;
+
+                // Process each DA line below the current BRDA line.
+                while(startsWith("DA:", coverage[i])) {
+                    // Push the DA line to daLines.
+                    daLines.push_back(coverage[i]);
+
+                    // Increment the line index.
+                    i++;
+                }
+
+                // Check if the next line starts with the signature.
+                if(!startsWith(signature, coverage[i])) {
+                    // Squashing should stop if the next line does not start
+                    // with the signature, i.e. it does not describe a
+                    // branch in the current if-statement.
+                    squash = false;
+                }
+            }
+
+            // Create a line for the first branch.
+            stringstream firstBranchOut;
+            firstBranchOut
+                << "BRDA:"
+                << line
+                << ",0,0,"
+                << firstBranchHits;
+
+            // Push the line for the first branch.
+            convertedCoverage.push_back(firstBranchOut.str());
+
+            // Create a line for the second branch.
+            stringstream secondBranchOut;
+            secondBranchOut
+                << "BRDA:"
+                << line
+                << ",0,1,"
+                << secondBranchHits;
+
+            // Push the line for the second branch.
+            convertedCoverage.push_back(secondBranchOut.str());
+
+            // Process each DA line.
+            for(string daLine : daLines) {
+                // Push the current DA line.
+                convertedCoverage.push_back(daLine);
+            }
+        }
+        else {
+            // Push the current coverage line.
+            convertedCoverage.push_back(coverage[i]);
+
+            // Increment the line index.
+            i++;
+        }
+    }
+
+    // Return the converted coverage.
+    return convertedCoverage;
+}
+
+/// Converts the coverage lines in a certain source file.
+///
+/// @param coverage The coverage lines to be converted.
+/// @param source The lines in the source file corresponding to the coverage
+/// lines.
+/// @return The converted lines.
+vector<string> convertSourceFile(
+    vector<string> coverage,
+    const vector<string>& source) {
+    // Process the coverage with convertFunctionLines.
+    coverage = convertFunctionLines(coverage, source);
+    
+    // Process the coverage with filterZeroHitsCurlyBraces.
+    coverage = filterZeroHitsCurlyBraces(coverage, source);
+
+    // Process the coverage with filterIfBranches.
+    coverage = filterIfBranches(coverage, source);
+
+    // Process the coverage with convertBranches.
+    coverage = convertBranches(coverage, source);
+
+    // Return the converted coverage.
+    return coverage;
+}
+
+/// Converts the coverage lines.
+///
+/// @param coverage The coverage lines to be converted.
+/// @return The converted lines.
+vector<string> convertAll(vector<string> coverage) {
+    // Create a vector for the coverage file to create.
+    vector<string> convertedCoverage;
+
+    // Process each coverage line.
+    for(int i = 0; i < coverage.size();) {
+        // Check if the current line is a source file line.
+        if(startsWith("SF:", coverage[i])) {
+            // Get the path to the source file.
+            string path = coverage[i].substr(3);
+
+            // Read the source file.
+            vector<string> source = readFile(path);
+
+            // Push the source file line.
+            convertedCoverage.push_back(coverage[i]);
+
+            // Increment the line index.
+            i++;
+
+            // Create a vector for the coverage lines in the current file.
+            vector<string> sourceCoverage;
+
+            // Process all lines before the next file or the end of the
+            // coverage.
+            for(;i < coverage.size() && !startsWith("SF:", coverage[i]); i++) {
+                // Push the current coverage line.
+                sourceCoverage.push_back(coverage[i]);
+            }
+
+            // Process the coverage with convertSourceFile.
+            vector<string> convertedSourceCoverage = convertSourceFile(
+                sourceCoverage,
+                source);
+
+            // Process each converted line.
+            for(string coverageLine : convertedSourceCoverage) {
+                // Push the current coverage line.
+                convertedCoverage.push_back(coverageLine);
+            }
+        }
+        else {
+            // Push the line without processing by default.
+            convertedCoverage.push_back(coverage[i]);
+
+            // Increment the line index.
+            i++;
+        }
+    }
+
+    // Return the converted coverage.
+    return convertedCoverage;
+}
+
 /// The main method.
 ///
 /// @param argc The number of arguments.
@@ -348,240 +740,11 @@ int main(int argc, char** argv) {
     // Read the orignal coverage file.
     vector<string> coverage = readFile(inPath);
 
-    // Create a vector to store the contents of a source file.
-    vector<string> source;
-
-    // Create a vector for the coverage file to create.
-    vector<string> filteredCoverage;
-
-    // Process each coverage line.
-    for(int i = 0; i < coverage.size(); i++) {
-        // Get the current line.
-        string coverageLine = coverage[i];
-
-        // Check if the current line is a source file line.
-        if(startsWith("SF:", coverageLine)) {
-            // Get the path to the source file.
-            string path = coverageLine.substr(3);
-
-            // Read the source file.
-            source = readFile(path);
-
-            // Push the source file line.
-            filteredCoverage.push_back(coverageLine);
-        }
-
-        // Check if the current line is a branch line.
-        else if(startsWith("BRDA:", coverageLine)) {
-            // Get the BRDA value from the line.
-            tuple<int, int, int, int> values = getBRDAValues(coverageLine);
-
-            // Get the line number.
-            int line = get<0>(values);
-
-            // Get the source file line corresponding to the line number.
-            string sourceLine = source[line - 1];
-
-            // Check if the line starts with "if".
-            if(startsWithTrimmed("if(", sourceLine)) {
-                // On macOS, one branch is created for each template version.
-                // This means all branches have to be merged to the true and the
-                // false case to get full branch coverage.
-
-                // Push the current coverage line.
-                filteredCoverage.push_back(coverageLine);
-
-                // Get the first comma.
-                int firstComma = coverageLine.find_first_of(',');
-
-                // Create a signature, i.e. a string describing a BRDA line with
-                // the current line number.
-                string signature = coverageLine.substr(0, firstComma);
-
-                // Describes if cases should continue being squashed.
-                bool squash = true;
-
-                // Contains the number of hits on the first branch.
-                int firstBranchHits = 0;
-
-                // Contains the number of hits on the second branch.
-                int secondBranchHits = 0;
-
-                // Continue while squash is true.
-                while(squash) {
-                    // Get the next coverage line.
-                    string nextCoverageLine = coverage[i + 1];
-
-                    // Check if the next line starts with the signature.
-                    if(startsWith(signature, nextCoverageLine)) {
-                        // Get the BRDA values for the line.
-                        tuple<int, int, int, int> values
-                            = getBRDAValues(nextCoverageLine);
-
-                        // Get the branch ID.
-                        int branch = get<2>(values);
-
-                        // Get the number of hits on the branch.
-                        int hits = get<3>(values);
-
-                        // The branches of the templates are placed in
-                        // succession after each other, which means they
-                        // alternate with regards to the actual branches.
-                        bool onSecondBranch = branch % 2;
-
-                        // Check if the branch is on the second branch.
-                        if(onSecondBranch) {
-                            // Add the number of hits to the total number of
-                            // second branch hits.
-                            secondBranchHits += hits;
-                        }
-                        else {
-                            // Add the number of hits to the total number of
-                            // first branch hits.
-                            firstBranchHits += hits;
-                        }
-
-                        // Increment the line index.
-                        i++;
-
-                        // Update coverageLine.
-                        coverageLine = coverage[i];
-                    }
-                    else {
-                        // Squashing should stop if the next line does not start
-                        // with the signature, i.e. it does not describe a
-                        // branch in the current if-statement.
-                        squash = false;
-                    }
-                }
-
-                // Create a line for the first branch.
-                stringstream firstBranchOut;
-                firstBranchOut
-                    << "BRDA:"
-                    << line
-                    << ",0,0,"
-                    << firstBranchHits;
-
-                // Push the line for the first branch.
-                filteredCoverage.push_back(firstBranchOut.str());
-
-                // Create a line for the second branch.
-                stringstream secondBranchOut;
-                secondBranchOut
-                    << "BRDA:"
-                    << line
-                    << ",0,1,"
-                    << secondBranchHits;
-
-                // Push the line for the second branch.
-                filteredCoverage.push_back(secondBranchOut.str());
-            }
-        }
-
-        // Check if the current line is a function line.
-        else if(startsWith("FN:", coverageLine)) {
-            // The number of calls to functions are tracked for each template
-            // version. This means all functions have to be merged to get full
-            // branch coverage.
-
-            // Get the first comma of the line.
-            int firstComma = coverageLine.find_first_of(',');
-
-            // Get the line to base a signature on.
-            string signatureLine = coverageLine;
-
-            // Create a signature, i.e. a string describing a FN line with
-            // the current line number.
-            string signature = signatureLine.substr(0, firstComma);
-
-            // Get the function name.
-            string functionName = signatureLine.substr(firstComma + 1);
-
-            // Push the signature line.
-            filteredCoverage.push_back(signatureLine);
-            
-            // Contains the number of calls to the function.
-            int totalCalls = 0;
-
-            // Describes if function calls should continue being squashed.
-            bool squash = true;
-
-            // Continue while squash is true.
-            while(squash) {
-                // Get the next coverage line.
-                string nextCoverageLine = coverage[i + 1];
-
-                // Check if the next coverage line is a line describing the
-                // number of calls to the previously specified function.
-                if(startsWith("FNDA:", nextCoverageLine)) {
-                    // Get the number of calls.
-                    int calls = getFirstValue("FNDA:", nextCoverageLine);
-
-                    // Add the number of calls to totalCalls.
-                    totalCalls += calls;
-
-                    // Increment the line index.
-                    i++;
-                    
-                    // Update coverageLine.
-                    coverageLine = coverage[i];
-                }
-
-                // Get the next coverage line.
-                nextCoverageLine = coverage[i + 1];
-
-                // Check if the next coverage line starts with the signature.
-                if(startsWith(signature, nextCoverageLine)) {
-                    // Increment the line index.
-                    i++;
-
-                    // Update coverageLine.
-                    coverageLine = coverage[i];
-
-                    // This line's FNDA line will be processed during the next
-                    // iteration.
-                }
-                else {
-                    // Break the loop since the line is not related to the
-                    // function.
-                    squash = false;
-                }
-            }
-
-            // Create a stringstream.
-            stringstream out;
-
-            // Create a new FNDA line with the total calls.
-            out << "FNDA:" << totalCalls << "," << functionName;
-
-            // Push the new line.
-            filteredCoverage.push_back(out.str());
-        }
-
-        // Check if the current line is a statement line.
-        else if(startsWith("DA:", coverageLine)) {
-            // Get the line number.
-            int line = getFirstValue("DA:", coverageLine);
-
-            // Get the number of hits on the line.
-            int hits = getSecondValue("DA:", coverageLine);
-
-            // Remove any uncovered lines starting with } as certain methods
-            // returning values sometimes (especially with Apple clang) reports
-            // these lines as uncovered.
-            if(hits != 0 || !startsWithTrimmed("}", source[line - 1])) {
-                filteredCoverage.push_back(coverageLine);
-            }
-        }
-        else {
-            // Push the line without processing by default.
-            filteredCoverage.push_back(coverageLine);
-        }
-    }
+    // Convert the coverage.
+    vector<string> convertedCoverage = convertAll(coverage);
 
     // Write the new coverage file.
-    writeFile(outPath, filteredCoverage);
+    writeFile(outPath, convertedCoverage);
 
     // Return zero.
     return 0;
