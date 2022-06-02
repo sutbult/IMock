@@ -4,7 +4,7 @@ FROM ubuntu:22.04
 # Inform the operating system that no user interaction is possible.
 ENV DEBIAN_FRONTEND noninteractive
 
-# Update APT and install necessary packages.
+# Update APT and install packages necessary to build the program.
 RUN apt update && apt install -y \
     build-essential \
     cmake \
