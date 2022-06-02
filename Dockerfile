@@ -9,14 +9,7 @@ RUN apt update && apt install -y \
     build-essential \
     cmake \
     lcov \
-    clang \
-    curl
-
-# Download the codecov executable.
-RUN curl -Os https://uploader.codecov.io/v0.1.0_4653/linux/codecov
-
-# Make codecov executable.
-RUN chmod +x codecov
+    clang
 
 # Create a directory for the repository.
 RUN mkdir /IMock

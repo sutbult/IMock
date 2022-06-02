@@ -26,15 +26,3 @@ jobs:
           bash -c "make test-all && mv lcov.info output"
     - name: Upload test coverage to codecov
       uses: codecov/codecov-action@v3
-
-#    - name: Upload test coverage to codecov
-#      run: |
-#        curl -Os https://uploader.codecov.io/latest/linux/codecov && \
-#          chmod +x ./codecov && \
-#          ./codecov -f output/lcov.info -t ${CODECOV_TOKEN}
-
-#      run: echo "$(bash <(curl -s https://codecov.io/env))" && docker build -t imock . && docker run \
-#        $(bash <(curl -s https://codecov.io/env)) \
-#        -e CI=true \
-#        -t imock \
-#        bash -c "make test-all && /codecov"
