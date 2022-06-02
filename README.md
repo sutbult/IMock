@@ -2,6 +2,7 @@
 
 [![Build](https://github.com/sutbult/IMock/actions/workflows/build.yml/badge.svg)](https://github.com/sutbult/IMock/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/sutbult/IMock/branch/dev/graph/badge.svg?token=P5M1I55YCG)](https://codecov.io/gh/sutbult/IMock)
 
 IMock is a C++11 mocking library for interfaces.
 It supports regular stack-allocated values,
