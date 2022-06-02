@@ -18,9 +18,9 @@ jobs:
       run: docker build -t imock .
     - name: Test using the built Docker image
       run: |
-        mkdir output |
+        mkdir output && \
         docker run \
-          -v "$PWD/output:/output" \
+          --mount "type=bind,source=$PWD/output,target=/IMock/output" \
           -t imock \
           bash -c "make test-all && mv lcov.info output"
     - name: Upload test coverage to codecov
