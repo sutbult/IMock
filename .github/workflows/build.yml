@@ -27,7 +27,7 @@ jobs:
       run: |
         curl -Os https://uploader.codecov.io/v0.1.0_4653/linux/codecov && \
           chmod +x ./codecov && \
-          ./codecov
+          ./codecov -f output/lcov.info
 
 #      run: echo "$(bash <(curl -s https://codecov.io/env))" && docker build -t imock . && docker run \
 #        $(bash <(curl -s https://codecov.io/env)) \
