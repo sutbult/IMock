@@ -25,7 +25,7 @@ jobs:
           bash -c "make test-all && mv lcov.info output"
     - name: Upload test coverage to codecov
       run: |
-        curl -Os https://uploader.codecov.io/v0.1.0_4653/linux/codecov && \
+        curl -Os https://uploader.codecov.io/latest/linux/codecov && \
           chmod +x ./codecov && \
           ./codecov -f output/lcov.info -t ${CODECOV_TOKEN}
 
