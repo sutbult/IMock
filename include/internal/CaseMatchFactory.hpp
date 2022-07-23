@@ -35,7 +35,7 @@ class CaseMatchFactory {
         static CaseMatch<TReturn> match(TReturn returnValue) {
             // Create and return a CaseMatch with the provided return value.
             return CaseMatch<TReturn>(makeUnique<NonVoidReturnValue<TReturn>>(
-                std::move(returnValue)));
+                std::forward<TReturn>(returnValue)));
         }
 
         /// Creates a CaseMatch indicating a match mas been made with a method

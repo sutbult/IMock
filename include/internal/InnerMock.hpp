@@ -72,7 +72,7 @@ class InnerMock {
                     // Forward the call to _mock.onCall.
                     return _mock.onCall<TReturn, TArguments...>(
                         id,
-                        std::move(arguments)...);
+                        std::forward<TArguments>(arguments)...);
                 }
         };
 
@@ -208,7 +208,7 @@ class InnerMock {
             // Get the MockMethod for the called method and forward the call to
             // onCall.
             return getMockMethod<TReturn, TArguments...>(virtualTableOffset)
-                .onCall(std::move(arguments)...);
+                .onCall(std::forward<TArguments>(arguments)...);
         }
 
         /// Gets the MockMethod for the method with the provided virtual table

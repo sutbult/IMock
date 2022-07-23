@@ -56,7 +56,8 @@ class MockWithMethod {
                 _mock,
                 _method,
                 _methodString,
-                std::tuple<TArguments...>(std::move(arguments)...));
+                std::tuple<TArguments...>(
+                    std::forward<TArguments>(arguments)...));
         }
 
         /// Adds a fake handling the method call.
