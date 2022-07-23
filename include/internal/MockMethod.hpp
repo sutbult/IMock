@@ -116,7 +116,8 @@ class MockMethod : public IMockMethodNonGeneric {
         /// match any mock case.
         TReturn onCall(TArguments... arguments) {
             // Create a tuple from the arguments.
-            std::tuple<TArguments...> tupleArguments(std::move(arguments)...);
+            std::tuple<TArguments...> tupleArguments(
+                std::forward<TArguments>(arguments)...);
 
             // Declare a pointer for mock cases and initialize it with the top
             // mock case.

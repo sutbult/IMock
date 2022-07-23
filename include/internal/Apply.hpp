@@ -46,7 +46,8 @@ class Apply {
             std::function<TReturn (TArguments...)> callback,
             std::tuple<TArguments...> arguments) {
             // Call callback with the extracted arguments.
-            return callback(std::move(std::get<S>(arguments))...);
+            return callback(std::forward<TArguments>(std::get<S>(
+                arguments))...);
         }
 
     public:

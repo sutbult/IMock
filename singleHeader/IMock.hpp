@@ -1,8 +1,8 @@
 #pragma once
 
 /*
-IMock 1.0.0
-Generated 2022-05-20 16:49:13.644184 UTC
+IMock 1.0.1
+Generated 2022-07-23 00:20:16.816037 UTC
 
 MIT License
 
@@ -81,7 +81,8 @@ class Apply {
             std::function<TReturn (TArguments...)> callback,
             std::tuple<TArguments...> arguments) {
             // Call callback with the extracted arguments.
-            return callback(std::move(std::get<S>(arguments))...);
+            return callback(std::forward<TArguments>(std::get<S>(
+                arguments))...);
         }
 
     public:
@@ -154,7 +155,7 @@ class NonVoidReturnValue : public IReturnValue<TReturn> {
         ///
         /// @param returnValue The value to return.
         NonVoidReturnValue(TReturn returnValue)
-            : _returnValue(std::move(returnValue)) {
+            : _returnValue(std::forward<TReturn>(returnValue)) {
         }
         
         virtual TReturn getReturnValue() override {
@@ -540,7 +541,7 @@ class ToString {
         static std::vector<std::string> toStrings(TValue... values) {
             // Call toString for each value.
             std::vector<std::string> strings = {
-                toString<TValue>(std::move(values))...
+                toString<TValue>(std::forward<TValue>(values))...
             };
 
             // Return the strings.
@@ -795,7 +796,8 @@ class MockMethod : public IMockMethodNonGeneric {
         /// match any mock case.
         TReturn onCall(TArguments... arguments) {
             // Create a tuple from the arguments.
-            std::tuple<TArguments...> tupleArguments(std::move(arguments)...);
+            std::tuple<TArguments...> tupleArguments(
+                std::forward<TArguments>(arguments)...);
 
             // Declare a pointer for mock cases and initialize it with the top
             // mock case.
@@ -1228,7 +1230,7 @@ class InnerMock {
                     // Forward the call to _mock.onCall.
                     return _mock.onCall<TReturn, TArguments...>(
                         id,
-                        std::move(arguments)...);
+                        std::forward<TArguments>(arguments)...);
                 }
         };
 
@@ -1363,7 +1365,7 @@ class InnerMock {
             // Get the MockMethod for the called method and forward the call to
             // onCall.
             return getMockMethod<TReturn, TArguments...>(virtualTableOffset)
-                .onCall(std::move(arguments)...);
+                .onCall(std::forward<TArguments>(arguments)...);
         }
 
         /// Gets the MockMethod for the method with the provided virtual table
@@ -1423,7 +1425,7 @@ class CaseMatchFactory {
         static CaseMatch<TReturn> match(TReturn returnValue) {
             // Create and return a CaseMatch with the provided return value.
             return CaseMatch<TReturn>(makeUnique<NonVoidReturnValue<TReturn>>(
-                std::move(returnValue)));
+                std::forward<TReturn>(returnValue)));
         }
 
         /// Creates a CaseMatch indicating a match mas been made with a method
@@ -1780,7 +1782,8 @@ class MockWithMethod {
                 _mock,
                 _method,
                 _methodString,
-                std::tuple<TArguments...>(std::move(arguments)...));
+                std::tuple<TArguments...>(
+                    std::forward<TArguments>(arguments)...));
         }
 
         /// Adds a fake handling the method call.
