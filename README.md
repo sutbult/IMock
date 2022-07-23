@@ -162,7 +162,8 @@ callCount.verifyCalledOnce();
 However, it is necessary to keep the memory containing values used in mock cases
 alive for the duration of the `Mock` instance as only references are stored if
 arguments and/or return values are declared as references.
-Nevertheless, values used to call the mocked method only needs to be kept alive for the duration of the call and can be safely deleted afterwards.
+Nevertheless, values used to call the mocked method only needs to be kept alive
+for the duration of the call and can be safely deleted afterwards.
 
 ### Methods without arguments
 
