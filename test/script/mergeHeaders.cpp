@@ -25,7 +25,7 @@ using std::stringstream;
 using std::vector;
 
 /// The current version of IMock.
-const string version = "1.0.0";
+const string version = "1.0.1";
 
 /// Defines which characters counts as whitespaces.
 const std::string whitespaces = " \t\n\r";
