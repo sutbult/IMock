@@ -47,7 +47,7 @@ class NonVoidReturnValue : public IReturnValue<TReturn> {
         ///
         /// @param returnValue The value to return.
         NonVoidReturnValue(TReturn returnValue)
-            : _returnValue(std::move(returnValue)) {
+            : _returnValue(std::forward<TReturn>(returnValue)) {
         }
         
         virtual TReturn getReturnValue() override {

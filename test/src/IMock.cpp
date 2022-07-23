@@ -452,6 +452,114 @@ TEST_CASE("can mock a basic interface", "[basic]") {
     }
 }
 
+/// Like ICalculator but all values are references.
+class IReferenceCalculator {
+    public:
+        virtual int& add(int&, int&) = 0;
+        virtual int& subtract(int&, int&) = 0;
+        virtual int& multiply(int&, int&) = 0;
+        virtual int& divide(int&, int&) = 0;
+};
+
+TEST_CASE("can mock an interface where every argument and return value is a "
+    "reference", "[reference]") {
+    // Create a Mock of IReferenceCalculator.
+    IMock::Mock<IReferenceCalculator> mock;
+
+    SECTION("mock add") {
+        // Declare variables for one and two. It is necessary to keep the memory
+        // containing used test values alive for the duration of the test since
+        // IMock only stores references to values if arguments and/or return
+        // values are declared as references.
+        int one = 1;
+        int two = 2;
+
+        // Mock add.
+        IMock::CallCount callCount = when(mock, add)
+            .with(one, one)
+            .returns(two);
+
+        SECTION("call add with the mocked values") {
+            // Call add within a lambda.
+            const int& result = ([&]() {
+                // However, values used to call mocked methods only needs to be
+                // kept alive for the duration of the call and can be safely
+                // deleted afterwards.
+                int scopedOne = 1;
+
+                // Call add with the scoped one.
+                return mock.get().add(scopedOne, scopedOne);
+            })();
+
+            SECTION("the result is correct") {
+                // Verify the result equals two.
+                REQUIRE(result == two);
+            }
+
+            SECTION("the call count is one") {
+                // Call verifyCalledOnce and verify it does not throw an
+                // exception.
+                REQUIRE_NOTHROW(callCount.verifyCalledOnce());
+            }
+        }
+
+        SECTION("mock add again") {
+            // Declare a variable for five.
+            int five = 5;
+
+            // Mock add with other values.
+            IMock::CallCount callCountSecond = when(mock, add)
+                .with(two, two)
+                .returns(five);
+
+            SECTION("call add with the second mock") {
+                // Call add with the values of the second mock.
+                const int& result = mock.get().add(two, two);
+
+                SECTION("the result is correct") {
+                    // Verify the result is five.
+                    REQUIRE(result == five);
+                }
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(callCountSecond.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the first mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(callCount.verifyNeverCalled());
+                }
+            }
+
+            SECTION("call add with the first mock") {
+                // Call add with the values of the first mock.
+                const int& result = mock.get().add(one, one);
+
+                SECTION("the result is correct") {
+                    // Verify the result is two.
+                    REQUIRE(result == two);
+                }
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(callCount.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the second mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(callCountSecond
+                        .verifyNeverCalled());
+                }
+            }
+        }
+    }
+}
+
 /// Like ICalculator but all values are constant references.
 class IConstantReferenceCalculator {
     public:
@@ -462,7 +570,7 @@ class IConstantReferenceCalculator {
 };
 
 TEST_CASE("can mock an interface where every argument and return value is a "
-    "constant reference", "[reference]") {
+    "constant reference", "[constant_reference]") {
     // Create a Mock of IConstantReferenceCalculator.
     IMock::Mock<IConstantReferenceCalculator> mock;
 

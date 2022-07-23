@@ -87,7 +87,7 @@ class ToString {
         static std::vector<std::string> toStrings(TValue... values) {
             // Call toString for each value.
             std::vector<std::string> strings = {
-                toString<TValue>(std::move(values))...
+                toString<TValue>(std::forward<TValue>(values))...
             };
 
             // Return the strings.
