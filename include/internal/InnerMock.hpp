@@ -44,14 +44,6 @@ class InnerMock {
                     : _virtualTable(std::move(virtualTable))
                     , _mock(mock) {
                 }
-
-                /// Gets the contained InnerMock.
-                ///
-                /// @return The contained InnerMock.
-                InnerMock& getMock() {
-                    // Return the contained InnerMock.
-                    return _mock;
-                }
                 
                 /// Called when a call to a method in the interface is called.
                 ///
