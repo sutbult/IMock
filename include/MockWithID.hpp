@@ -37,7 +37,7 @@ class MockWithID {
         template <typename TReturn, typename ...TArguments>
         MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
             Method<TInterface, TReturn, TArguments...> method,
-            std::string methodString) {
+            std::string methodString) const {
             // Create and return a MockWithMethod with the InnerMock,
             // the method and the call string.
             return MockWithMethod<TInterface, id, TReturn, TArguments...>(
@@ -59,7 +59,7 @@ class MockWithID {
         template <typename TReturn, typename ...TArguments>
         MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
             TReturn (TInterface::*method)(TArguments...) const,
-            std::string methodString) {
+            std::string methodString) const {
             // Cast the constant method to a regular method and forward the call
             // to the regular withMethod.
             return withMethod(

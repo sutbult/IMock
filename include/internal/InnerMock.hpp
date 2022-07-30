@@ -220,10 +220,10 @@ class InnerMock {
         /// @tparam TArguments The types of the arguments to the mocked method.
         template <typename TReturn, typename ...TArguments>
         MockMethod<TReturn, TArguments...>& getMockMethod(
-            VirtualTableOffset virtualTableOffset) {
+            VirtualTableOffset virtualTableOffset) const {
             // Get the MockMethod from _mockMethods.
             IMockMethodNonGeneric& mockMethodNonGeneric
-                = *_mockMethods[virtualTableOffset].get();
+                = *_mockMethods.at(virtualTableOffset).get();
 
             // Cast mockMethodNonGeneric to its correct type.
             MockMethod<TReturn, TArguments...>& mockMethod

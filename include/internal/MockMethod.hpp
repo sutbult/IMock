@@ -162,7 +162,7 @@ class MockMethod : public IMockMethodNonGeneric {
         ///
         /// @param arguments The arguments of the call.
         /// @return A string describing how the call was made.
-        std::string getCallString(std::tuple<TArguments...> arguments) {
+        std::string getCallString(std::tuple<TArguments...> arguments) const {
             // Convert the arguments to strings.
             std::vector<std::string> stringArguments
                 = Apply::apply<std::vector<std::string>, TArguments...>(
