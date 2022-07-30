@@ -39,7 +39,8 @@ class MockWithArgumentsCase : public ICase<TReturn, TArguments...> {
         /// @param arguments The arguments the mocked method was called with,
         /// which will be moved to _fake if a match is made.
         /// @return A CaseMatch indicating if the arguments resulted in a match.
-        CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments) {
+        CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments)
+            override {
             // Check if the call arguments matches the mock case's arguments.
             if(arguments == _arguments) {
                 // Call _fake and return its return value if a match has been

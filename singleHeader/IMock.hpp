@@ -2,7 +2,7 @@
 
 /*
 IMock 1.0.1
-Generated 2022-07-30 12:08:09.174078 UTC
+Generated 2022-07-30 17:55:39.249078 UTC
 
 MIT License
 
@@ -122,7 +122,7 @@ template <typename TReturn>
 class IReturnValue {
     public:
         /// Virtual destructor of IReturnValue.
-        virtual ~IReturnValue() {
+        virtual ~IReturnValue() noexcept {
         }
 
         /// Gets the return value.
@@ -376,7 +376,7 @@ namespace Internal {
 class IMockMethodNonGeneric {
     public:
         /// Virtual destructor of IMockMethodNonGeneric.
-        virtual ~IMockMethodNonGeneric() {
+        virtual ~IMockMethodNonGeneric() noexcept {
         }
 };
 
@@ -451,7 +451,7 @@ class MutableCallCount {
         /// Gets the call count.
         ///
         /// @return The call count.
-        int getCallCount() {
+        int getCallCount() const {
             // Return the call count.
             return _callCount;
         }
@@ -645,7 +645,7 @@ class CallCount {
         ///
         /// @return The number of times the underlying mock case currently has
         /// been called.
-        int getCallCount() {
+        int getCallCount() const {
             // Call getCallCount to get the call count and then return it.
             return _callCount->getCallCount();
         }
@@ -657,7 +657,7 @@ class CallCount {
         /// have been called.
         /// @throws Throws a WrongCallCountException if the actual call count
         /// differs from the expected call count.
-        void verifyCallCount(int expectedCallCount) {
+        void verifyCallCount(int expectedCallCount) const {
             // Get the actual call count.
             int actualCallCount = getCallCount();
 
@@ -674,7 +674,7 @@ class CallCount {
         ///
         /// @throws Throws a WrongCallCountException if the mock case has not
         /// been called exactly once.
-        void verifyCalledOnce() {
+        void verifyCalledOnce() const {
             // Call verifyCallCount with one.
             verifyCallCount(1);
         }
@@ -683,7 +683,7 @@ class CallCount {
         ///
         /// @throws Throws a WrongCallCountException if the mock case has been
         /// called at least once.
-        void verifyNeverCalled() {
+        void verifyNeverCalled() const {
             // Call verifyCallCount with zero.
             verifyCallCount(0);
         }
@@ -748,7 +748,7 @@ class MockMethod : public IMockMethodNonGeneric {
 
         /// Destructs the MockMethod by deleting all InnerMockCase instances
         /// iteratively to not cause any stack overflows.
-        ~MockMethod() {
+        ~MockMethod() noexcept {
             // Declare a pointer for mock cases and initialize it with the top
             // mock case while releasing its unique_ptr.
             InnerMockCase* mockCase = _topMockCase.release();
@@ -842,7 +842,7 @@ class MockMethod : public IMockMethodNonGeneric {
         ///
         /// @param arguments The arguments of the call.
         /// @return A string describing how the call was made.
-        std::string getCallString(std::tuple<TArguments...> arguments) {
+        std::string getCallString(std::tuple<TArguments...> arguments) const {
             // Convert the arguments to strings.
             std::vector<std::string> stringArguments
                 = Apply::apply<std::vector<std::string>, TArguments...>(
@@ -1202,14 +1202,6 @@ class InnerMock {
                     : _virtualTable(std::move(virtualTable))
                     , _mock(mock) {
                 }
-
-                /// Gets the contained InnerMock.
-                ///
-                /// @return The contained InnerMock.
-                InnerMock& getMock() {
-                    // Return the contained InnerMock.
-                    return _mock;
-                }
                 
                 /// Called when a call to a method in the interface is called.
                 ///
@@ -1377,10 +1369,10 @@ class InnerMock {
         /// @tparam TArguments The types of the arguments to the mocked method.
         template <typename TReturn, typename ...TArguments>
         MockMethod<TReturn, TArguments...>& getMockMethod(
-            VirtualTableOffset virtualTableOffset) {
+            VirtualTableOffset virtualTableOffset) const {
             // Get the MockMethod from _mockMethods.
             IMockMethodNonGeneric& mockMethodNonGeneric
-                = *_mockMethods[virtualTableOffset].get();
+                = *_mockMethods.at(virtualTableOffset).get();
 
             // Cast mockMethodNonGeneric to its correct type.
             MockMethod<TReturn, TArguments...>& mockMethod
@@ -1488,7 +1480,8 @@ class MockWithMethodCase : public ICase<TReturn, TArguments...> {
         /// which will be moved to _fake.
         /// @return A CaseMatch indicating a match using the return value from
         /// _fake.
-        CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments) {
+        CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments)
+            override {
             // Return a CaseMatch for the fake.
             return Internal::CaseMatchFactory::matchFake(
                 _fake,
@@ -1550,7 +1543,8 @@ class MockWithArgumentsCase : public ICase<TReturn, TArguments...> {
         /// @param arguments The arguments the mocked method was called with,
         /// which will be moved to _fake if a match is made.
         /// @return A CaseMatch indicating if the arguments resulted in a match.
-        CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments) {
+        CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments)
+            override {
             // Check if the call arguments matches the mock case's arguments.
             if(arguments == _arguments) {
                 // Call _fake and return its return value if a match has been
@@ -1775,7 +1769,7 @@ class MockWithMethod {
         /// @param arguments The arguments to match.
         /// @return A MockWithArguments associated with the arguments.
         MockWithArguments<TInterface, id, TReturn, TArguments...> with(
-            TArguments... arguments) {
+            TArguments... arguments) const {
             // Create and return a MockWithArguments with the InnerMock,
             // the method, the call string and the arguments.
             return MockWithArguments<TInterface, id, TReturn, TArguments...>(
@@ -1800,7 +1794,7 @@ class MockWithMethod {
             // Add the case to InnerMock.
             return _mock.template addCase<id, TReturn, TArguments...>(
                 _method,
-                std::move(_methodString),
+                _methodString,
                 std::move(mockCase));
         }
 };
@@ -1839,7 +1833,7 @@ class MockWithID {
         template <typename TReturn, typename ...TArguments>
         MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
             Method<TInterface, TReturn, TArguments...> method,
-            std::string methodString) {
+            std::string methodString) const {
             // Create and return a MockWithMethod with the InnerMock,
             // the method and the call string.
             return MockWithMethod<TInterface, id, TReturn, TArguments...>(
@@ -1861,7 +1855,7 @@ class MockWithID {
         template <typename TReturn, typename ...TArguments>
         MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
             TReturn (TInterface::*method)(TArguments...) const,
-            std::string methodString) {
+            std::string methodString) const {
             // Cast the constant method to a regular method and forward the call
             // to the regular withMethod.
             return withMethod(

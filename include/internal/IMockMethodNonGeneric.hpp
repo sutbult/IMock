@@ -8,7 +8,7 @@ namespace Internal {
 class IMockMethodNonGeneric {
     public:
         /// Virtual destructor of IMockMethodNonGeneric.
-        virtual ~IMockMethodNonGeneric() {
+        virtual ~IMockMethodNonGeneric() noexcept {
         }
 };
 
