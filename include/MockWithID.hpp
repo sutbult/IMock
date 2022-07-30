@@ -45,6 +45,28 @@ class MockWithID {
                 method,
                 std::move(methodString));
         }
+
+        /// Creates a MockWithMethod used to add a mock case to the provided
+        /// constant method.
+        ///
+        /// @param method The constant method to add mock cases for.
+        /// @param methodString A string describing how a call is made to the
+        /// constant method being mocked.
+        /// @return A MockWithMethod associated with the constant method.
+        /// @tparam TReturn The return type of the constant method.
+        /// @tparam TArguments The types of the arguments to the constant
+        /// method.
+        template <typename TReturn, typename ...TArguments>
+        MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
+            TReturn (TInterface::*method)(TArguments...) const,
+            std::string methodString) {
+            // Cast the constant method to a regular method and forward the call
+            // to the regular withMethod.
+            return withMethod(
+                reinterpret_cast<Method<TInterface, TReturn, TArguments...>>(
+                    method),
+                std::move(methodString));
+        }
 };
 
 }

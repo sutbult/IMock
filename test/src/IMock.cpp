@@ -758,6 +758,97 @@ TEST_CASE("can mock an interface without arguments", "[no_arguments]") {
     }
 }
 
+/// An interface without any arguments with a constant method.
+class INoArgumentsConstant {
+    public:
+        virtual int getInt() const = 0;
+};
+
+TEST_CASE("can mock an interface without arguments with a constant method",
+    "[no_arguments]") {
+    // Create a Mock of INoArgumentsConstant.
+    IMock::Mock<INoArgumentsConstant> mock;
+
+    SECTION("call getInt when it has not been mocked") {
+        // Perform the call and verify it throws an UnknownCallException.
+        REQUIRE_THROWS_MATCHES(
+            mock.get().getInt(),
+            IMock::Exception::UnknownCallException,
+            Catch::Message("A call was made to a method that has not been "
+                "mocked."));
+    }
+
+    SECTION("mock getInt") {
+        // Generate a bool to have two configurations.
+        bool withReturns = GENERATE(true, false);
+
+        // Mock getInt.
+        IMock::CallCount callCount = withReturns
+            // Use returns if withReturns is true.
+            ? when(mock, getInt)
+                .with()
+                .returns(1)
+
+            // Use fake if withReturns is false.
+            : when(mock, getInt)
+                .with()
+                .fake([]() {
+                    return 1;
+                });
+
+        SECTION("no calls have initially been made") {
+            // Call verifyNeverCalled and verify it does not throw an exception.
+            REQUIRE_NOTHROW(callCount.verifyNeverCalled());
+        }
+
+        SECTION("call getInt") {
+            // Call getInt.
+            int result = mock.get().getInt();
+
+            SECTION("the result is correct") {
+                // Verify the result equals 1.
+                REQUIRE(result == 1);
+            }
+
+            SECTION("the call count is one") {
+                // Call verifyNeverCalled and verify it does not throw an
+                // exception.
+                REQUIRE_NOTHROW(callCount.verifyCalledOnce());
+            }
+        }
+
+        SECTION("mock getInt again") {
+            // Mock getInt with other values.
+            IMock::CallCount callCountSecond =
+                when(mock, getInt)
+                    .with()
+                    .returns(2);
+
+            SECTION("call getInt") {
+                // Call getInt.
+                int result = mock.get().getInt();
+
+                SECTION("the result is correct") {
+                    // Verify the result is 2.
+                    REQUIRE(result == 2);
+                }
+
+                SECTION("the call count is one") {
+                    // Call verifyCalledOnce and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(callCountSecond.verifyCalledOnce());
+                }
+
+                SECTION("the call count for the first mock is zero") {
+                    // Call verifyNeverCalled and verify it does not throw an
+                    // exception.
+                    REQUIRE_NOTHROW(callCount.verifyNeverCalled());
+                }
+            }
+        }
+    }
+}
+
 /// An interface with no return value.
 class INoReturnValue {
     public:
