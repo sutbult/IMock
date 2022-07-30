@@ -14,7 +14,7 @@ template <typename TReturn>
 class IReturnValue {
     public:
         /// Virtual destructor of IReturnValue.
-        virtual ~IReturnValue() {
+        virtual ~IReturnValue() noexcept {
         }
 
         /// Gets the return value.

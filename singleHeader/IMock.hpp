@@ -2,7 +2,7 @@
 
 /*
 IMock 1.0.1
-Generated 2022-07-30 12:08:09.174078 UTC
+Generated 2022-07-30 12:27:16.334203 UTC
 
 MIT License
 
@@ -122,7 +122,7 @@ template <typename TReturn>
 class IReturnValue {
     public:
         /// Virtual destructor of IReturnValue.
-        virtual ~IReturnValue() {
+        virtual ~IReturnValue() noexcept {
         }
 
         /// Gets the return value.
@@ -376,7 +376,7 @@ namespace Internal {
 class IMockMethodNonGeneric {
     public:
         /// Virtual destructor of IMockMethodNonGeneric.
-        virtual ~IMockMethodNonGeneric() {
+        virtual ~IMockMethodNonGeneric() noexcept {
         }
 };
 
@@ -748,7 +748,7 @@ class MockMethod : public IMockMethodNonGeneric {
 
         /// Destructs the MockMethod by deleting all InnerMockCase instances
         /// iteratively to not cause any stack overflows.
-        ~MockMethod() {
+        ~MockMethod() noexcept {
             // Declare a pointer for mock cases and initialize it with the top
             // mock case while releasing its unique_ptr.
             InnerMockCase* mockCase = _topMockCase.release();
