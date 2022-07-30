@@ -23,7 +23,7 @@ class MutableCallCount {
         /// Gets the call count.
         ///
         /// @return The call count.
-        int getCallCount() {
+        int getCallCount() const {
             // Return the call count.
             return _callCount;
         }

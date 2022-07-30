@@ -28,7 +28,7 @@ class CallCount {
         ///
         /// @return The number of times the underlying mock case currently has
         /// been called.
-        int getCallCount() {
+        int getCallCount() const {
             // Call getCallCount to get the call count and then return it.
             return _callCount->getCallCount();
         }
@@ -40,7 +40,7 @@ class CallCount {
         /// have been called.
         /// @throws Throws a WrongCallCountException if the actual call count
         /// differs from the expected call count.
-        void verifyCallCount(int expectedCallCount) {
+        void verifyCallCount(int expectedCallCount) const {
             // Get the actual call count.
             int actualCallCount = getCallCount();
 
@@ -57,7 +57,7 @@ class CallCount {
         ///
         /// @throws Throws a WrongCallCountException if the mock case has not
         /// been called exactly once.
-        void verifyCalledOnce() {
+        void verifyCalledOnce() const {
             // Call verifyCallCount with one.
             verifyCallCount(1);
         }
@@ -66,7 +66,7 @@ class CallCount {
         ///
         /// @throws Throws a WrongCallCountException if the mock case has been
         /// called at least once.
-        void verifyNeverCalled() {
+        void verifyNeverCalled() const {
             // Call verifyCallCount with zero.
             verifyCallCount(0);
         }

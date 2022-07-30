@@ -49,7 +49,7 @@ class MockWithMethod {
         /// @param arguments The arguments to match.
         /// @return A MockWithArguments associated with the arguments.
         MockWithArguments<TInterface, id, TReturn, TArguments...> with(
-            TArguments... arguments) {
+            TArguments... arguments) const {
             // Create and return a MockWithArguments with the InnerMock,
             // the method, the call string and the arguments.
             return MockWithArguments<TInterface, id, TReturn, TArguments...>(
@@ -74,7 +74,7 @@ class MockWithMethod {
             // Add the case to InnerMock.
             return _mock.template addCase<id, TReturn, TArguments...>(
                 _method,
-                std::move(_methodString),
+                _methodString,
                 std::move(mockCase));
         }
 };

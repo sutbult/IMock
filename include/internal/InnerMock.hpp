@@ -44,14 +44,6 @@ class InnerMock {
                     : _virtualTable(std::move(virtualTable))
                     , _mock(mock) {
                 }
-
-                /// Gets the contained InnerMock.
-                ///
-                /// @return The contained InnerMock.
-                InnerMock& getMock() {
-                    // Return the contained InnerMock.
-                    return _mock;
-                }
                 
                 /// Called when a call to a method in the interface is called.
                 ///
@@ -220,10 +212,10 @@ class InnerMock {
         /// @tparam TArguments The types of the arguments to the mocked method.
         template <typename TReturn, typename ...TArguments>
         MockMethod<TReturn, TArguments...>& getMockMethod(
-            VirtualTableOffset virtualTableOffset) {
+            VirtualTableOffset virtualTableOffset) const {
             // Get the MockMethod from _mockMethods.
             IMockMethodNonGeneric& mockMethodNonGeneric
-                = *_mockMethods[virtualTableOffset].get();
+                = *_mockMethods.at(virtualTableOffset).get();
 
             // Cast mockMethodNonGeneric to its correct type.
             MockMethod<TReturn, TArguments...>& mockMethod
