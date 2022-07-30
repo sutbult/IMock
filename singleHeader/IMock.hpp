@@ -2,7 +2,7 @@
 
 /*
 IMock 1.0.1
-Generated 2022-07-23 00:20:16.816037 UTC
+Generated 2022-07-30 12:08:09.174078 UTC
 
 MIT License
 
@@ -1845,6 +1845,28 @@ class MockWithID {
             return MockWithMethod<TInterface, id, TReturn, TArguments...>(
                 _mock,
                 method,
+                std::move(methodString));
+        }
+
+        /// Creates a MockWithMethod used to add a mock case to the provided
+        /// constant method.
+        ///
+        /// @param method The constant method to add mock cases for.
+        /// @param methodString A string describing how a call is made to the
+        /// constant method being mocked.
+        /// @return A MockWithMethod associated with the constant method.
+        /// @tparam TReturn The return type of the constant method.
+        /// @tparam TArguments The types of the arguments to the constant
+        /// method.
+        template <typename TReturn, typename ...TArguments>
+        MockWithMethod<TInterface, id, TReturn, TArguments...> withMethod(
+            TReturn (TInterface::*method)(TArguments...) const,
+            std::string methodString) {
+            // Cast the constant method to a regular method and forward the call
+            // to the regular withMethod.
+            return withMethod(
+                reinterpret_cast<Method<TInterface, TReturn, TArguments...>>(
+                    method),
                 std::move(methodString));
         }
 };
