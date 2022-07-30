@@ -34,7 +34,8 @@ class MockWithMethodCase : public ICase<TReturn, TArguments...> {
         /// which will be moved to _fake.
         /// @return A CaseMatch indicating a match using the return value from
         /// _fake.
-        CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments) {
+        CaseMatch<TReturn> matches(std::tuple<TArguments...>& arguments)
+            override {
             // Return a CaseMatch for the fake.
             return Internal::CaseMatchFactory::matchFake(
                 _fake,
