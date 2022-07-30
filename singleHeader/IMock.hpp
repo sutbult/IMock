@@ -1,8 +1,8 @@
 #pragma once
 
 /*
-IMock 1.0.1
-Generated 2022-07-30 17:55:39.249078 UTC
+IMock 1.1.0
+Generated 2022-07-30 18:08:08.797053 UTC
 
 MIT License
 
